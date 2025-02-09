@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1035</width>
+    <height>833</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QFrame" name="frame">
+      <property name="frameShape">
+       <enum>QFrame::Shape::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Shadow::Raised</enum>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1035</width>
+     <height>33</height>
+    </rect>
+   </property>
+   <property name="defaultUp">
+    <bool>false</bool>
+   </property>
+   <property name="nativeMenuBar">
+    <bool>true</bool>
+   </property>
+   <widget class="QMenu" name="menuimport">
+    <property name="title">
+     <string>import</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menusave">
+    <property name="title">
+     <string>save</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menu_preview">
+    <property name="title">
+     <string>
+preview</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menu_ai_tools">
+    <property name="title">
+     <string>ai tools</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menutools">
+    <property name="title">
+     <string>tools</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menusetting">
+    <property name="title">
+     <string>setting</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menueffects">
+    <property name="title">
+     <string>effects</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="action1"/>
+   </widget>
+   <addaction name="menuimport"/>
+   <addaction name="menusave"/>
+   <addaction name="menu_preview"/>
+   <addaction name="menu_ai_tools"/>
+   <addaction name="menutools"/>
+   <addaction name="menusetting"/>
+   <addaction name="menueffects"/>
+  </widget>
+  <action name="action1">
+   <property name="text">
+    <string>1</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

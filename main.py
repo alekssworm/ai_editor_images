@@ -1,5 +1,7 @@
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow
+from editor import Editor
+
 
 import ui_editor
 import ui_main
@@ -9,6 +11,7 @@ from ui_editor import  Ui_MainWindow  # Импортируем редактор
 class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.editor = Editor()
         self.ui = ui_main.Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -17,7 +20,6 @@ class MainApp(QMainWindow):
 
     def open_editor(self):
         """Закрываем текущее окно и открываем редактор"""
-        self.editor = EditorApp()
         self.editor.show()
         self.close()  # Закрываем главное окно
 
