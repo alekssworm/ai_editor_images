@@ -1,18 +1,28 @@
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMainWindow, QDockWidget, QWidget
+from PySide6.QtWidgets import QMainWindow, QDockWidget, QWidget, QDialog
 from PySide6.QtCore import Qt
-from ai_panel import Ui_Dialog  # Загружаем UI панели AI
+from ui_ai_panel import Ui_Dialog as Ui_AiPanel
 from ui_editor import Ui_MainWindow
+from ui_allocation import Ui_Dialog as Ui_Allocation
 
 
-from PySide6.QtWidgets import QWidget
-from ai_panel import Ui_Dialog  # UI AI Panel
-
-class AiPanel(QWidget, Ui_Dialog):
+class AiPanel(QWidget, Ui_AiPanel):
     """Класс панели AI Tools"""
-    def __init__(self, parent=None):  # ✅ Добавили parent
-        super().__init__(parent)  # ✅ Передаём parent в QWidget
-        self.setupUi(self)  # Загружаем UI
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setupUi(self)
+
+        # Подключаем кнопку pen к открытию ui_allocation
+        self.pen.clicked.connect(self.open_allocation)
+
+    def open_allocation(self):
+        """Открывает окно ui_allocation"""
+        self.allocation_window = QDialog()
+        self.ui_allocation = Ui_Allocation()
+        self.ui_allocation.setupUi(self.allocation_window)
+        self.allocation_window.show()
+
 
 
 
@@ -21,7 +31,6 @@ class Editor(QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
 
-        # Проверяем, есть ли menu_ai_tools в UI
         if hasattr(self, "menu_ai_tools"):
             self.action_ai_tools = QAction("AI Tools", self)
             self.menu_ai_tools.addAction(self.action_ai_tools)
@@ -32,10 +41,10 @@ class Editor(QMainWindow, Ui_MainWindow):
         # Создаем и настраиваем AI Panel как QDockWidget
         self.ai_panel = QDockWidget("AI Panel", self)
         self.ai_panel.setAllowedAreas(Qt.RightDockWidgetArea)
-        self.ai_widget = AiPanel()  # Создаем виджет на основе UI
-        self.ai_panel.setWidget(self.ai_widget)  # Теперь это QWidget
+        self.ai_widget = AiPanel()
+        self.ai_panel.setWidget(self.ai_widget)
         self.addDockWidget(Qt.RightDockWidgetArea, self.ai_panel)
-        self.ai_panel.setVisible(False)  # Скрываем панель при запуске
+        self.ai_panel.setVisible(False)
 
     def toggle_ai_panel(self):
         """Переключает видимость AI Panel."""
@@ -50,4 +59,3 @@ if __name__ == "__main__":
     window = Editor()
     window.show()
     sys.exit(app.exec())
-
