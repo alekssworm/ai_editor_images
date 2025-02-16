@@ -1,61 +1,49 @@
-from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMainWindow, QDockWidget, QWidget, QDialog
+from PySide6.QtWidgets import QDialog, QColorDialog
+from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt
-from ui_ai_panel import Ui_Dialog as Ui_AiPanel
-from ui_editor import Ui_MainWindow
-from ui_allocation import Ui_Dialog as Ui_Allocation
+from ui_ai_panel import Ui_Dialog
 
 
-class AiPanel(QWidget, Ui_AiPanel):
-    """Класс панели AI Tools"""
+class AiPanel(QDialog, Ui_Dialog):
+    """Панель инструментов AI"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
 
-        # Подключаем кнопку pen к открытию ui_allocation
-        self.pen.clicked.connect(self.open_allocation)
+        # Подключаем кнопки к функциям
+        self.colour.clicked.connect(self.choose_color)
+        self.pen.clicked.connect(self.toggle_drawing_mode)
 
-    def open_allocation(self):
-        """Открывает окно ui_allocation"""
-        self.allocation_window = QDialog()
-        self.ui_allocation = Ui_Allocation()
-        self.ui_allocation.setupUi(self.allocation_window)
-        self.allocation_window.show()
+        # Цвет для рисования
+        self.pen_color = QColor(Qt.GlobalColor.black)
+        self.drawing = False  # Флаг рисования
 
+    def choose_color(self):
+        """Выбор цвета кисти"""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.pen_color = color  # Обновляем цвет кисти
 
+            # Получаем главное окно (Editor) и устанавливаем цвет кисти
+            editor = self.get_editor()
+            if editor:
+                editor.pen_color = color
 
+    def toggle_drawing_mode(self):
+        """Переключение режима рисования"""
+        self.drawing = not self.drawing
 
-class Editor(QMainWindow, Ui_MainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
+        # Получаем главное окно (Editor) и включаем режим рисования
+        editor = self.get_editor()
+        if editor:
+            editor.toggle_drawing_mode()
 
-        if hasattr(self, "menu_ai_tools"):
-            self.action_ai_tools = QAction("AI Tools", self)
-            self.menu_ai_tools.addAction(self.action_ai_tools)
-            self.action_ai_tools.triggered.connect(self.toggle_ai_panel)
-        else:
-            print("⚠ Ошибка: menu_ai_tools не найден в ui_editor.py!")
-
-        # Создаем и настраиваем AI Panel как QDockWidget
-        self.ai_panel = QDockWidget("AI Panel", self)
-        self.ai_panel.setAllowedAreas(Qt.RightDockWidgetArea)
-        self.ai_widget = AiPanel()
-        self.ai_panel.setWidget(self.ai_widget)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.ai_panel)
-        self.ai_panel.setVisible(False)
-
-    def toggle_ai_panel(self):
-        """Переключает видимость AI Panel."""
-        self.ai_panel.setVisible(not self.ai_panel.isVisible())
-
-
-if __name__ == "__main__":
-    from PySide6.QtWidgets import QApplication
-    import sys
-
-    app = QApplication(sys.argv)
-    window = Editor()
-    window.show()
-    sys.exit(app.exec())
+    def get_editor(self):
+        """Возвращает главный `Editor` из `QDockWidget`"""
+        parent = self.parentWidget()
+        while parent:
+            if isinstance(parent, QDialog):  # Проверяем, является ли родитель Editor
+                return parent
+            parent = parent.parentWidget()
+        return None

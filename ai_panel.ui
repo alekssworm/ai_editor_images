@@ -52,8 +52,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>484</width>
-        <height>348</height>
+        <width>491</width>
+        <height>381</height>
        </rect>
       </property>
       <property name="orientation">
@@ -69,21 +69,9 @@
        <property name="frameShadow">
         <enum>QFrame::Shadow::Raised</enum>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <widget class="QLabel" name="label">
-          <property name="font">
-           <font>
-            <pointsize>14</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>scene №1</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSplitter" name="splitter_3">
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QSplitter" name="splitter_2">
           <property name="orientation">
            <enum>Qt::Orientation::Horizontal</enum>
           </property>
@@ -135,9 +123,24 @@
             </size>
            </property>
           </widget>
+          <widget class="QPushButton" name="colour_1">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/palette.svg</normaloff>icons/palette.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+          </widget>
          </widget>
         </item>
-        <item>
+        <item row="1" column="0">
          <widget class="QSplitter" name="splitter">
           <property name="orientation">
            <enum>Qt::Orientation::Horizontal</enum>
@@ -190,6 +193,21 @@
             </size>
            </property>
           </widget>
+          <widget class="QPushButton" name="colour">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/palette.svg</normaloff>icons/palette.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>24</width>
+             <height>24</height>
+            </size>
+           </property>
+          </widget>
           <widget class="QPushButton" name="pushButton_4">
            <property name="text">
             <string/>
@@ -206,14 +224,14 @@
           </widget>
          </widget>
         </item>
-        <item>
+        <item row="2" column="0">
          <widget class="QPushButton" name="pushButton_19">
           <property name="text">
            <string>add obj</string>
           </property>
          </widget>
         </item>
-        <item>
+        <item row="3" column="0">
          <widget class="QPushButton" name="pushButton_18">
           <property name="text">
            <string>render</string>
@@ -228,7 +246,7 @@
        <rect>
         <x>0</x>
         <y>380</y>
-        <width>481</width>
+        <width>491</width>
         <height>31</height>
        </rect>
       </property>
