@@ -109,20 +109,24 @@ from PySide6.QtWidgets import QGraphicsView
 from PySide6.QtGui import QWheelEvent, QMouseEvent
 from PySide6.QtCore import Qt
 
+from PySide6.QtWidgets import QGraphicsView
+from PySide6.QtGui import QWheelEvent, QMouseEvent
+from PySide6.QtCore import Qt
+
 class GraphicsViewWithZoom(QGraphicsView):
-    """✅ Расширенный QGraphicsView с поддержкой зума и рисования"""
+    """✅ Расширенный QGraphicsView с поддержкой зума и без блокировки рисования"""
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setDragMode(QGraphicsView.NoDrag)  # ❌ Убираем режим перетаскивания (мешал рисованию)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)  # ✅ Зум вокруг мыши
         self.zoom_factor = 1.15  # Коэффициент масштабирования
-        self.min_zoom = 0.2  # Минимальный масштаб
-        self.max_zoom = 5.0  # Максимальный масштаб
+        self.min_zoom = 0.5  # Минимальный масштаб (чтобы изображение не исчезло)
+        self.max_zoom = 3.0  # Максимальный масштаб
         self.current_zoom = 1.0  # Текущее увеличение
         self.is_panning = False  # ✅ Флаг панорамирования
 
     def wheelEvent(self, event: QWheelEvent):
-        """✅ Масштабирование при прокрутке колесика мыши"""
+        """✅ Масштабирование при прокрутке колесика мыши (только при зажатом Ctrl)"""
         if event.modifiers() == Qt.ControlModifier:  # ✅ Увеличение только при зажатом Ctrl
             if event.angleDelta().y() > 0:  # Прокрутка вверх (увеличение)
                 if self.current_zoom < self.max_zoom:
@@ -163,6 +167,7 @@ class GraphicsViewWithZoom(QGraphicsView):
             super().mouseReleaseEvent(event)  # ✅ Передаем событие сцене (рисование)
 
 
+
 class Editor(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
@@ -188,6 +193,13 @@ class Editor(QMainWindow, Ui_MainWindow):
 
         self.ai_panel = None  # ✅ Панель создается только при нажатии
         self.drawing_tools = None  # ✅ Создаем переменную, но не инициализируем
+
+    def import_image(self):
+        """✅ Открывает диалог выбора файла и загружает изображение"""
+        file_path, _ = QFileDialog.getOpenFileName(self, "Выберите изображение", "",
+                                                   "Images (*.png *.jpg *.jpeg *.bmp *.gif)")
+        if file_path:
+            self.scene.load_image(file_path)  # ✅ Загружаем изображение в сцену
 
     def open_ai_panel(self):
         """✅ Открывает `AiPanel` при нажатии"""
@@ -227,13 +239,6 @@ class Editor(QMainWindow, Ui_MainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self.drawing_tools)
         self.drawing_tools.hide()  # ✅ Скрываем панель при запуске
 
-    def import_image(self):
-        """✅ Открывает диалог выбора файла и загружает изображение"""
-        file_path, _ = QFileDialog.getOpenFileName(self, "Выберите изображение", "",
-                                                   "Images (*.png *.jpg *.jpeg *.bmp *.gif)")
-        if file_path:
-            self.scene.load_image(file_path)  # ✅ Убираем `()` – теперь всё работает
-
     def choose_color(self):
         """✅ Выбирает цвет кисти"""
         color = QColorDialog.getColor()
@@ -243,3 +248,4 @@ class Editor(QMainWindow, Ui_MainWindow):
     def change_pen_size(self, value):
         """✅ Меняет толщину кисти"""
         self.scene.set_pen_width(value)
+
