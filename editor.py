@@ -13,76 +13,92 @@ from PySide6.QtGui import QAction
 
 
 
+from PySide6.QtGui import QBrush, QColor
+
+from PySide6.QtWidgets import QGraphicsPixmapItem
+from PySide6.QtGui import QPixmap
+
 class DrawingScene(QGraphicsScene):
-    """✅ Сцена для рисования только внутри изображения"""
+    """✅ Сцена для рисования с поддержкой фигур и кисти"""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.pen_color = Qt.green  # ✅ Цвет кисти
+        self.pen_color = QColor(0, 255, 0, 255)  # ✅ Зеленый цвет (по умолчанию)
         self.pen_width = 2  # ✅ Толщина кисти
         self.shape_mode = "free"  # ✅ Режим рисования
         self.current_path = None
         self.current_item = None  # ✅ Переменная для текущего рисунка
         self.start_point = None
         self.image_item = None  # ✅ Изображение
+        self.image_rect = None  # ✅ Границы изображения
         self.drawing = False  # ✅ Флаг нажатия мыши
-
-    def set_pen_color(self, color):
-        """✅ Изменение цвета кисти"""
-        self.pen_color = color
-
-    def set_pen_width(self, width):
-        """✅ Изменение толщины кисти"""
-        self.pen_width = width
+        self.temp_item = None  # ✅ Временная фигура
 
     def set_drawing_mode(self, mode):
         """✅ Устанавливает режим рисования (кисть, круг, квадрат, линия)"""
         self.shape_mode = mode
 
+    def set_pen_width(self, width):
+        """✅ Изменяет толщину кисти"""
+        self.pen_width = width
+
     def load_image(self, image_path):
         """✅ Загружает изображение в сцену"""
         pixmap = QPixmap(image_path)
+        if pixmap.isNull():
+            print("Ошибка: невозможно загрузить изображение")
+            return
+
         if self.image_item:
-            self.removeItem(self.image_item)  # Удаляем старое изображение
+            self.removeItem(self.image_item)  # ✅ Удаляем старое изображение
+
         self.image_item = QGraphicsPixmapItem(pixmap)
         self.addItem(self.image_item)
         self.image_item.setZValue(-1)  # ✅ Размещаем изображение под слоями рисования
-        self.image_rect = self.image_item.boundingRect()  # ✅ Сохраняем границы изображения
+        self.image_rect = self.image_item.boundingRect()  # ✅ Запоминаем границы изображения
 
-    def is_inside_image(self, point):
-        """✅ Проверяет, находится ли точка внутри изображения"""
-        return self.image_item and self.image_rect.contains(self.image_item.mapFromScene(point))
+
+
+    def set_pen_color(self, color):
+        """✅ Изменение цвета кисти (учитываем текущую прозрачность)"""
+        self.pen_color = QColor(color.red(), color.green(), color.blue(), self.pen_color.alpha())
+
+    def set_pen_opacity(self, value):
+        """✅ Изменение прозрачности кисти (1-10 -> 1.0-0.1)"""
+        alpha = int((value / 10) * 255)  # ✅ Преобразуем диапазон (1-10) в (255-25)
+        self.pen_color.setAlpha(alpha)  # ✅ Устанавливаем прозрачность цвета
 
     def mousePressEvent(self, event):
         """✅ Начало рисования (только на изображении)"""
-        if not self.is_inside_image(event.scenePos()):
-            return  # ❌ Игнорируем, если клик за границами изображения
+        if self.image_item and not self.image_rect.contains(self.image_item.mapFromScene(event.scenePos())):
+            return  # ❌ Игнорируем клики за пределами изображения
 
-        self.drawing = True  # ✅ Устанавливаем флаг рисования
+        self.drawing = True  # ✅ Флаг нажатия мыши
+        pen = QPen(self.pen_color, self.pen_width)
 
         if self.shape_mode == "free":
             self.current_path = QPainterPath(event.scenePos())
-            self.current_item = self.addPath(self.current_path, QPen(self.pen_color, self.pen_width))
+            self.current_item = self.addPath(self.current_path, pen)
         elif self.shape_mode in ["circle", "square", "line"]:
             self.start_point = event.scenePos()  # ✅ Запоминаем начальную точку
 
     def mouseMoveEvent(self, event):
         """✅ Процесс рисования"""
-        if not self.is_inside_image(event.scenePos()) or not self.drawing:
-            return  # ❌ Игнорируем, если движение за границами или нет нажатия
+        if not self.drawing:
+            return  # ❌ Игнорируем, если кнопка мыши не зажата
+
+        pen = QPen(self.pen_color, self.pen_width)
 
         if self.shape_mode == "free" and self.current_item:
             path = self.current_path
-            path.lineTo(event.scenePos())  # ✅ Добавляем линию к текущему положению мыши
+            path.lineTo(event.scenePos())
             self.current_item.setPath(path)
 
         elif self.shape_mode in ["circle", "square", "line"]:
             if self.start_point is None:
-                return  # ❌ Игнорируем, если `start_point` не установлен
+                return  # ❌ Если начальная точка не установлена, ничего не делаем
 
-            if hasattr(self, "temp_item") and self.temp_item:
+            if self.temp_item:
                 self.removeItem(self.temp_item)  # ✅ Удаляем старую временную фигуру
-
-            pen = QPen(self.pen_color, self.pen_width)
 
             if self.shape_mode == "circle":
                 radius = abs(event.scenePos().x() - self.start_point.x())
@@ -95,19 +111,13 @@ class DrawingScene(QGraphicsScene):
 
     def mouseReleaseEvent(self, event):
         """✅ Завершение рисования"""
-        if self.shape_mode in ["circle", "square", "line"]:
+        if self.shape_mode in ["circle", "square", "line"] and self.temp_item:
             self.temp_item = None  # ✅ Оставляем фигуру на холсте
 
         self.drawing = False  # ✅ Сбрасываем флаг рисования
 
 
-from PySide6.QtWidgets import QGraphicsView
-from PySide6.QtGui import QWheelEvent
-from PySide6.QtCore import Qt
 
-from PySide6.QtWidgets import QGraphicsView
-from PySide6.QtGui import QWheelEvent, QMouseEvent
-from PySide6.QtCore import Qt
 
 from PySide6.QtWidgets import QGraphicsView
 from PySide6.QtGui import QWheelEvent, QMouseEvent
@@ -235,6 +245,10 @@ class Editor(QMainWindow, Ui_MainWindow):
 
         # ✅ Подключаем ползунки
         self.ui_draw.horizontalSlider.valueChanged.connect(self.change_pen_size)
+        self.ui_draw.horizontalSlider_2.setMinimum(1)  # ✅ Прозрачность от 1 (100%) до 10 (10%)
+        self.ui_draw.horizontalSlider_2.setMaximum(10)
+        self.ui_draw.horizontalSlider_2.setValue(10)  # ✅ Начальное значение = 1.0 (полная непрозрачность)
+        self.ui_draw.horizontalSlider_2.valueChanged.connect(self.change_pen_opacity)  # ✅ Подключаем
 
         self.addDockWidget(Qt.LeftDockWidgetArea, self.drawing_tools)
         self.drawing_tools.hide()  # ✅ Скрываем панель при запуске
@@ -245,7 +259,11 @@ class Editor(QMainWindow, Ui_MainWindow):
         if color.isValid():
             self.scene.set_pen_color(color)
 
-    def change_pen_size(self, value):
-        """✅ Меняет толщину кисти"""
-        self.scene.set_pen_width(value)
+    def change_pen_opacity(self, value):
+        """✅ Меняет прозрачность цвета кисти"""
+        self.scene.set_pen_opacity(value)  # ✅ Изменяем прозрачность цвета
 
+
+    def change_pen_size(self, value):
+       """✅ Меняет толщину кисти"""
+       self.scene.set_pen_width(value)  # ✅ Передаем значение в `DrawingScene`
