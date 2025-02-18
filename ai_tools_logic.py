@@ -1,49 +1,32 @@
-from PySide6.QtWidgets import QDialog, QColorDialog
-from PySide6.QtGui import QColor
-from PySide6.QtCore import Qt
-from ui_ai_panel import Ui_Dialog
+from PySide6.QtWidgets import QDockWidget, QDialog, QVBoxLayout
+from ui_ai_panel import Ui_DockWidget  # ✅ Импортируем `ui_ai_panel`
 
-
-class AiPanel(QDialog, Ui_Dialog):
+class AiPanel(QDockWidget, Ui_DockWidget):
     """Панель инструментов AI"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
 
-        # Подключаем кнопки к функциям
-        self.colour.clicked.connect(self.choose_color)
-        self.pen.clicked.connect(self.toggle_drawing_mode)
+        # Устанавливаем основное содержимое виджета
+        self.setWidget(self.dockWidgetContents)
 
-        # Цвет для рисования
-        self.pen_color = QColor(Qt.GlobalColor.black)
-        self.drawing = False  # Флаг рисования
+        # ✅ Проверяем правильное имя кнопки
+        if hasattr(self, "pushButton_27"):  # Проверяем альтернативное имя
+            self.pushButton_27.clicked.connect(self.open_drawing_settings)  # Если кнопка нашлась
+        else:
+            print("Ошибка: Кнопка 'pen' не найдена в AiPanel")
 
-    def choose_color(self):
-        """Выбор цвета кисти"""
-        color = QColorDialog.getColor()
-        if color.isValid():
-            self.pen_color = color  # Обновляем цвет кисти
+    def open_drawing_settings(self):
+        """Открывает окно настроек рисования"""
+        self.draw_settings = QDialog(self)  # Создаем диалоговое окно
+        self.ui_draw = Ui_DockWidget()
+        self.ui_draw.setupUi(self.draw_settings)
 
-            # Получаем главное окно (Editor) и устанавливаем цвет кисти
-            editor = self.get_editor()
-            if editor:
-                editor.pen_color = color
+        # ✅ Убираем `setWidget()`, заменяем на `setLayout()`
+        layout = QVBoxLayout()
+        layout.addWidget(self.ui_draw.dockWidgetContents)
+        self.draw_settings.setLayout(layout)
 
-    def toggle_drawing_mode(self):
-        """Переключение режима рисования"""
-        self.drawing = not self.drawing
-
-        # Получаем главное окно (Editor) и включаем режим рисования
-        editor = self.get_editor()
-        if editor:
-            editor.toggle_drawing_mode()
-
-    def get_editor(self):
-        """Возвращает главный `Editor` из `QDockWidget`"""
-        parent = self.parentWidget()
-        while parent:
-            if isinstance(parent, QDialog):  # Проверяем, является ли родитель Editor
-                return parent
-            parent = parent.parentWidget()
-        return None
+        self.draw_settings.setWindowTitle("Настройки рисования")
+        self.draw_settings.exec()  # Открываем окно как модальное
