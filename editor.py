@@ -218,6 +218,8 @@ class Editor(QMainWindow, Ui_MainWindow):
             self.ai_panel.pen.clicked.connect(self.open_drawing_settings)  # ✅ Подключаем кнопку "pen"
             self.addDockWidget(Qt.RightDockWidgetArea, self.ai_panel)
 
+        self.ai_panel.setFixedWidth(400)
+        self.ai_panel.setFixedHeight(self.height())
         self.ai_panel.show()
         self.ai_panel.raise_()
 
@@ -230,7 +232,8 @@ class Editor(QMainWindow, Ui_MainWindow):
     def create_drawing_tools(self):
         """✅ Создает `ui_settings_draw` (панель инструментов рисования)"""
         self.drawing_tools = QDockWidget("Настройки рисования", self)
-        self.drawing_tools.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.drawing_tools.setAllowedAreas(Qt.NoDockWidgetArea)  # ❌ Отключаем привязку к краям
+        self.drawing_tools.setFloating(True)
 
         # ✅ Подключаем `ui_settings_draw`
         self.ui_draw = Ui_DockWidget()
@@ -267,3 +270,5 @@ class Editor(QMainWindow, Ui_MainWindow):
     def change_pen_size(self, value):
        """✅ Меняет толщину кисти"""
        self.scene.set_pen_width(value)  # ✅ Передаем значение в `DrawingScene`
+
+
