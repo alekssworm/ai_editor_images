@@ -2,8 +2,8 @@ from PySide6.QtWidgets import (
     QMainWindow, QColorDialog, QGraphicsScene, QGraphicsPixmapItem,
     QGraphicsView, QDockWidget, QPushButton, QSlider, QLabel, QVBoxLayout, QWidget, QFileDialog
 )
-from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath
-from PySide6.QtCore import Qt, QPointF
+from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QIcon, QPainter
+from PySide6.QtCore import Qt, QPointF, QPoint
 from ai_tools_logic import AiPanel
 from ui_editor import Ui_MainWindow
 from ui_settings_draw import Ui_DockWidget  # ✅ Импортируем ui_settings_draw
@@ -201,8 +201,38 @@ class Editor(QMainWindow, Ui_MainWindow):
         self.menu_ai_tools.addAction(self.ai_tools_action)
         self.ai_tools_action.triggered.connect(self.open_ai_panel)
 
+        # ✅ Инициализируем переменные
+        self.selected_color = QColor(Qt.black)  # Черный цвет по умолчанию
+        self.selected_mode = "pen"  # Режим рисования по умолчанию
+
         self.ai_panel = None  # ✅ Панель создается только при нажатии
         self.drawing_tools = None  # ✅ Создаем переменную, но не инициализируем
+
+        self.create_drawing_tools()
+
+        # Подключаем кнопки из ui_settings_draw к методам обновления
+        self.ui_draw.pushButton_30.clicked.connect(lambda: self.update_pen_button_icon("free"))
+        self.ui_draw.pushButton_21.clicked.connect(lambda: self.update_pen_button_icon("circle"))
+        self.ui_draw.pushButton_27.clicked.connect(lambda: self.update_pen_button_icon("square"))
+
+
+
+    def update_pen_button_icon(self, mode):
+        """Меняет иконку кнопки 'pen' в зависимости от режима рисования"""
+        icons = {
+            "free": "icons/attribution-pencil.svg",
+            "circle": "icons/circle.svg",
+            "square": "icons/stop.svg",
+            "line": "icons/algorithm.svg",
+        }
+        if mode in icons:
+            self.pen_button.setIcon(QIcon(icons[mode]))
+
+    def choose_color_button(self):
+        """Меняет цвет кнопки 'pen' в AI-панели"""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.pen_button.setStyleSheet(f"background-color: {color.name()}; border-radius: 5px;")
 
     def import_image(self):
         """✅ Открывает диалог выбора файла и загружает изображение"""
@@ -217,6 +247,10 @@ class Editor(QMainWindow, Ui_MainWindow):
             self.ai_panel = AiPanel(self)
             self.ai_panel.pen.clicked.connect(self.open_drawing_settings)  # ✅ Подключаем кнопку "pen"
             self.addDockWidget(Qt.RightDockWidgetArea, self.ai_panel)
+
+        self.pen_button = self.ai_panel.pen  # Кнопка pen в AI-панели
+
+        self.pen_button.clicked.connect(self.open_drawing_settings)
 
         self.ai_panel.setFixedWidth(400)
         self.ai_panel.setFixedHeight(self.height())
