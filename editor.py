@@ -217,6 +217,8 @@ class Editor(QMainWindow, Ui_MainWindow):
 
 
 
+
+
     def update_pen_button_icon(self, mode):
         """Меняет иконку кнопки 'pen' в зависимости от режима рисования"""
         icons = {
@@ -228,11 +230,7 @@ class Editor(QMainWindow, Ui_MainWindow):
         if mode in icons:
             self.pen_button.setIcon(QIcon(icons[mode]))
 
-    def choose_color_button(self):
-        """Меняет цвет кнопки 'pen' в AI-панели"""
-        color = QColorDialog.getColor()
-        if color.isValid():
-            self.pen_button.setStyleSheet(f"background-color: {color.name()}; border-radius: 5px;")
+
 
     def import_image(self):
         """✅ Открывает диалог выбора файла и загружает изображение"""
@@ -291,10 +289,22 @@ class Editor(QMainWindow, Ui_MainWindow):
         self.drawing_tools.hide()  # ✅ Скрываем панель при запуске
 
     def choose_color(self):
-        """✅ Выбирает цвет кисти"""
+        """✅ Выбирает цвет кисти и обновляет цвет кнопки 'pen'"""
         color = QColorDialog.getColor()
         if color.isValid():
-            self.scene.set_pen_color(color)
+            self.selected_color = color  # Устанавливаем новый цвет кисти
+            self.scene.set_pen_color(color)  # Меняем цвет кисти в сцене
+
+            # ✅ Обновляем цвет кнопки "pen"
+            self.update_button_color()
+
+    def update_button_color(self):
+        """✅ Меняет фон кнопки 'pen' в зависимости от выбранного цвета кисти"""
+        if self.pen_button is not None:
+            style = f"background-color: {self.selected_color.name()}; border-radius: 5px;"
+            self.pen_button.setStyleSheet(style)
+        else:
+            print("Ошибка: self.pen_button не инициализирована!")
 
     def change_pen_opacity(self, value):
         """✅ Меняет прозрачность цвета кисти"""
