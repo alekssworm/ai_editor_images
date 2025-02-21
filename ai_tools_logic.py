@@ -11,11 +11,7 @@ class AiPanel(QDockWidget, Ui_DockWidget):
         # Устанавливаем основное содержимое виджета
         self.setWidget(self.dockWidgetContents)
 
-        # ✅ Проверяем правильное имя кнопки
-        if hasattr(self, "pushButton_27"):  # Проверяем альтернативное имя
-            self.pushButton_27.clicked.connect(self.open_drawing_settings)  # Если кнопка нашлась
-        else:
-            print("Ошибка: Кнопка 'pen' не найдена в AiPanel")
+
 
     def open_drawing_settings(self):
         """Открывает окно настроек рисования"""

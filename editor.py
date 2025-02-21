@@ -240,18 +240,17 @@ class Editor(QMainWindow, Ui_MainWindow):
             self.scene.load_image(file_path)  # ✅ Загружаем изображение в сцену
 
     def open_ai_panel(self):
-        """✅ Открывает `AiPanel` при нажатии"""
+        """✅ Открывает `AiPanel` с фиксированным размером"""
         if self.ai_panel is None:
             self.ai_panel = AiPanel(self)
             self.ai_panel.pen.clicked.connect(self.open_drawing_settings)  # ✅ Подключаем кнопку "pen"
             self.addDockWidget(Qt.RightDockWidgetArea, self.ai_panel)
 
         self.pen_button = self.ai_panel.pen  # Кнопка pen в AI-панели
-
         self.pen_button.clicked.connect(self.open_drawing_settings)
 
-        self.ai_panel.setFixedWidth(400)
-        self.ai_panel.setFixedHeight(self.height())
+        # ✅ Устанавливаем фиксированный размер `AiPanel`
+
         self.ai_panel.show()
         self.ai_panel.raise_()
 
