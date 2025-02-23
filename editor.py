@@ -59,14 +59,27 @@ class Editor(QMainWindow, Ui_MainWindow):
         self.drawing_tools.show()
 
     def create_drawing_tools(self):
-        """Создаёт `ui_settings_draw` (панель инструментов рисования)"""
+        """Создаёт `ui_settings_draw` (панель инструментов рисования) как отдельное окно"""
         if self.ai_panel is None:
             self.open_ai_panel()  # ✅ Убедимся, что `ai_panel` создан
 
         self.drawing_tools = DrawingTools(self, self.ai_panel.pen)  # ✅ Передаем `pen`
         self.drawing_tools.set_scene(self.scene)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.drawing_tools)
-        self.drawing_tools.hide()
+
+        # ✅ Делаем `ui_settings_draw` отдельным окном
+        self.drawing_tools.setFloating(True)
+        self.drawing_tools.setAllowedAreas(Qt.NoDockWidgetArea)  # ❌ Отключаем привязку к краям
+
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.drawing_tools)  # ✅ Нужно добавить, но без привязки
+        self.drawing_tools.hide()  # ✅ Скрываем при запуске
+
+    def open_drawing_settings(self):
+            """Открывает `ui_settings_draw` как отдельное окно"""
+            if self.drawing_tools is None:
+                self.create_drawing_tools()
+
+            self.drawing_tools.show()
+            self.drawing_tools.raise_()  # ✅ Поднимаем окно наверх
 
     def choose_color(self):
         """Выбирает цвет кисти и обновляет цвет кнопки 'pen'"""
