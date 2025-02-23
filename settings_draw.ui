@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>265</width>
-    <height>170</height>
+    <width>269</width>
+    <height>265</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,7 +27,7 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>60</y>
+         <y>150</y>
          <width>201</width>
          <height>22</height>
         </rect>
@@ -40,7 +40,7 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>100</y>
+         <y>190</y>
          <width>201</width>
          <height>22</height>
         </rect>
@@ -53,7 +53,7 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>40</y>
+         <y>130</y>
          <width>56</width>
          <height>19</height>
         </rect>
@@ -66,7 +66,7 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>80</y>
+         <y>170</y>
          <width>91</width>
          <height>19</height>
         </rect>
@@ -79,7 +79,7 @@
        <property name="geometry">
         <rect>
          <x>200</x>
-         <y>60</y>
+         <y>150</y>
          <width>41</width>
          <height>20</height>
         </rect>
@@ -92,7 +92,7 @@
        <property name="geometry">
         <rect>
          <x>200</x>
-         <y>100</y>
+         <y>190</y>
          <width>41</width>
          <height>20</height>
         </rect>
@@ -177,6 +177,110 @@
         </property>
        </widget>
        <widget class="QPushButton" name="colour_3">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>icons/palette.svg</normaloff>icons/palette.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+       </widget>
+      </widget>
+      <widget class="Line" name="line">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>50</y>
+         <width>251</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+      </widget>
+      <widget class="QSplitter" name="splitter_2">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>60</y>
+         <width>251</width>
+         <height>32</height>
+        </rect>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="handleWidth">
+        <number>0</number>
+       </property>
+       <widget class="QPushButton" name="eraser">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>icons/eraser.svg</normaloff>icons/eraser.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="fill">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>icons/fill.svg</normaloff>icons/fill.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="tap">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>icons/tap.svg</normaloff>icons/tap.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="colour_5">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>icons/palette.svg</normaloff>icons/palette.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="colour_7">
         <property name="text">
          <string/>
         </property>
