@@ -35,6 +35,8 @@ class Editor(QMainWindow, Ui_MainWindow):
         self.ai_panel = None
         self.drawing_tools = None  # Панель рисования создаётся при нажатии
 
+        self.create_tools_menu()
+
     def import_image(self):
         """Открывает диалог выбора файла и загружает изображение"""
         file_path, _ = QFileDialog.getOpenFileName(self, "Выберите изображение", "",
@@ -87,4 +89,56 @@ class Editor(QMainWindow, Ui_MainWindow):
         if color.isValid():
             self.selected_color = color
             self.scene.set_pen_color(color)  # Меняем цвет кисти в сцене
+
+    def create_tools_menu(self):
+        """Создаёт список инструментов в меню menutools"""
+        self.menutools.clear()
+
+        # Инструмент "Мышь" (для взаимодействия с объектами)
+        self.mouse_action = QAction("Мышь", self, checkable=True)
+        self.mouse_action.triggered.connect(lambda: self.set_tool("mouse"))
+        self.menutools.addAction(self.mouse_action)
+
+        # Инструмент "Круг"
+        self.circle_action = QAction("Круг", self, checkable=True)
+        self.circle_action.triggered.connect(lambda: self.set_tool("circle"))
+        self.menutools.addAction(self.circle_action)
+
+        # Инструмент "Квадрат"
+        self.square_action = QAction("Квадрат", self, checkable=True)
+        self.square_action.triggered.connect(lambda: self.set_tool("square"))
+        self.menutools.addAction(self.square_action)
+
+        # Инструмент "Линия"
+        self.line_action = QAction("Линия", self, checkable=True)
+        self.line_action.triggered.connect(lambda: self.set_tool("line"))
+        self.menutools.addAction(self.line_action)
+
+        # Инструмент "Кисть"
+        self.free_action = QAction("Кисть", self, checkable=True)
+        self.free_action.triggered.connect(lambda: self.set_tool("free"))
+        self.menutools.addAction(self.free_action)
+
+        # ✅ Группируем кнопки, чтобы работала система "только одна активная"
+        self.tool_actions = [self.mouse_action, self.circle_action, self.square_action, self.line_action,
+                             self.free_action]
+
+    def set_tool(self, tool):
+        """Устанавливает выбранный инструмент"""
+        # ✅ Снимаем выделение со всех кнопок перед активацией одной
+        for action in self.tool_actions:
+            action.setChecked(False)
+
+        # ✅ Выделяем текущий инструмент
+        sender = self.sender()
+        if sender:
+            sender.setChecked(True)
+
+        # ✅ Устанавливаем режим в `DrawingScene`
+        if tool == "mouse":
+            self.scene.set_drawing_mode(None)  # Отключаем рисование
+            self.scene.enable_selection()  # Включаем выделение объектов
+        else:
+            self.scene.set_drawing_mode(tool)  # Выбираем инструмент рисования
+
 

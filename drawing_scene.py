@@ -1,6 +1,23 @@
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem
-from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath
+from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog
+from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction
 from PySide6.QtCore import Qt
+
+
+class DrawableObject:
+    """Класс, представляющий фигуру на сцене"""
+    def __init__(self, shape, item):
+        self.shape = shape  # Тип фигуры: 'circle', 'square', 'line'
+        self.item = item  # Графический объект QGraphicsItem
+        self.pen = item.pen()  # Сохранение параметров пера
+
+    def set_pen(self, pen: QPen):
+        """Изменение пера (цвет, толщина и т.д.)"""
+        self.pen = pen
+        self.item.setPen(pen)
+
+    def move(self, dx, dy):
+        """Перемещение объекта"""
+        self.item.moveBy(dx, dy)
 
 class DrawingScene(QGraphicsScene):
     """Сцена для рисования с поддержкой фигур и кисти"""
@@ -16,6 +33,7 @@ class DrawingScene(QGraphicsScene):
         self.image_rect = None
         self.drawing = False
         self.temp_item = None
+        self.objects = []  # ✅ Список всех объектов на сцене
 
 
 
@@ -52,9 +70,19 @@ class DrawingScene(QGraphicsScene):
         self.image_rect = self.image_item.boundingRect()
 
     def mousePressEvent(self, event):
-        """Начало рисования"""
-        if self.image_item and not self.image_rect.contains(self.image_item.mapFromScene(event.scenePos())):
+        """Обрабатывает нажатие мыши"""
+        item = self.itemAt(event.scenePos(), self.views()[0].transform())
+
+        if self.shape_mode is None:  # Если включён режим "Мышь"
+            if item and item.isSelected():
+                self.start_point = event.scenePos()  # Запоминаем начальную точку для перемещения
+            else:
+                self.clearSelection()  # Снимаем выделение со всех объектов
+                if item:
+                    item.setSelected(True)  # Выделяем объект
             return
+
+        # Обычный режим рисования
         self.drawing = True
         pen = QPen(self.pen_color, self.pen_width)
         if self.shape_mode == "free":
@@ -64,7 +92,14 @@ class DrawingScene(QGraphicsScene):
             self.start_point = event.scenePos()
 
     def mouseMoveEvent(self, event):
-        """Процесс рисования"""
+        """Обрабатывает перемещение выделенного объекта"""
+        if self.shape_mode is None:  # ✅ Если включён режим "Мышь"
+            selected_items = self.selectedItems()
+            for item in selected_items:
+                item.setPos(item.pos() + event.scenePos() - event.lastScenePos())  # ✅ Перемещаем объект
+            return
+
+        # ✅ Обычный режим рисования
         if not self.drawing:
             return
         pen = QPen(self.pen_color, self.pen_width)
@@ -84,10 +119,62 @@ class DrawingScene(QGraphicsScene):
                 size = abs(event.scenePos().x() - self.start_point.x())
                 self.temp_item = self.addRect(self.start_point.x(), self.start_point.y(), size, size, pen)
             elif self.shape_mode == "line":
-                self.temp_item = self.addLine(self.start_point.x(), self.start_point.y(), event.scenePos().x(), event.scenePos().y(), pen)
+                self.temp_item = self.addLine(self.start_point.x(), self.start_point.y(), event.scenePos().x(),
+                                              event.scenePos().y(), pen)
 
     def mouseReleaseEvent(self, event):
         """Завершение рисования"""
         if self.shape_mode in ["circle", "square", "line"] and self.temp_item:
+            drawable = DrawableObject(self.shape_mode, self.temp_item)
+            self.objects.append(drawable)  # ✅ Добавляем объект в список
             self.temp_item = None
         self.drawing = False
+
+    def enable_selection(self):
+        """Включает возможность выделять и перемещать фигуры"""
+        for obj in self.objects:
+            obj.item.setFlags(
+                QGraphicsItem.ItemIsSelectable |
+                QGraphicsItem.ItemIsMovable |
+                QGraphicsItem.ItemSendsScenePositionChanges  # ✅ Обновление позиции при перемещении
+            )
+
+    def contextMenuEvent(self, event):
+        """Обрабатывает клик ПКМ (правой кнопкой) по объекту"""
+        item = self.itemAt(event.scenePos(), self.views()[0].transform())
+        if item:
+            menu = QMenu()
+
+            delete_action = QAction("Удалить", self)
+            delete_action.triggered.connect(lambda: self.remove_object(item))
+            menu.addAction(delete_action)
+
+            menu.exec(event.screenPos())
+
+    def remove_object(self, item):
+        """Удаляет объект со сцены"""
+        for obj in self.objects[:]:  # Создаём копию списка, чтобы безопасно изменять
+            if obj.item == item:
+                self.removeItem(item)
+                self.objects.remove(obj)
+                break  # ✅ Выходим после удаления, чтобы не было ошибок
+
+    def keyPressEvent(self, event):
+        """Обрабатывает нажатия клавиш"""
+        if event.key() == Qt.Key_Delete:
+            selected_items = self.selectedItems()
+            for item in selected_items:
+                self.remove_object(item)
+
+    def change_selected_color(self, color):
+        """Меняет цвет выделенного объекта"""
+        for obj in self.objects:
+            if obj.item.isSelected():
+                pen = QPen(color, obj.pen.width())
+                obj.set_pen(pen)
+
+    def choose_color(self):
+        """Выбирает цвет кисти и меняет цвет выделенной фигуры"""
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.change_selected_color(color)
