@@ -34,6 +34,7 @@ class DrawingScene(QGraphicsScene):
         self.drawing = False
         self.temp_item = None
         self.objects = []  # ✅ Список всех объектов на сцене
+        self.selected_object = None
 
 
 
@@ -70,16 +71,17 @@ class DrawingScene(QGraphicsScene):
         self.image_rect = self.image_item.boundingRect()
 
     def mousePressEvent(self, event):
-        """Обрабатывает нажатие мыши"""
+        """Обрабатывает нажатие мыши, чтобы перемещать объекты плавно"""
         item = self.itemAt(event.scenePos(), self.views()[0].transform())
 
-        if self.shape_mode is None:  # Если включён режим "Мышь"
-            if item and item.isSelected():
-                self.start_point = event.scenePos()  # Запоминаем начальную точку для перемещения
+        if self.shape_mode is None:  # ✅ Если включён режим "Мышь"
+            if item and item.isSelected() and item != self.image_item:
+                self.start_point = event.scenePos()  # ✅ Запоминаем начальную точку перемещения
+                self.selected_object = item  # ✅ Запоминаем объект, который двигаем
             else:
-                self.clearSelection()  # Снимаем выделение со всех объектов
-                if item:
-                    item.setSelected(True)  # Выделяем объект
+                self.clearSelection()  # ✅ Снимаем выделение со всех объектов
+                if item and item != self.image_item:
+                    item.setSelected(True)  # ✅ Выделяем объект
             return
 
         # Обычный режим рисования
@@ -92,11 +94,12 @@ class DrawingScene(QGraphicsScene):
             self.start_point = event.scenePos()
 
     def mouseMoveEvent(self, event):
-        """Обрабатывает перемещение выделенного объекта"""
+        """Обрабатывает перемещение выделенного объекта с более плавным управлением"""
         if self.shape_mode is None:  # ✅ Если включён режим "Мышь"
-            selected_items = self.selectedItems()
-            for item in selected_items:
-                item.setPos(item.pos() + event.scenePos() - event.lastScenePos())  # ✅ Перемещаем объект
+            if self.selected_object and self.selected_object != self.image_item:
+                delta = event.scenePos() - self.start_point
+                self.selected_object.setPos(self.selected_object.pos() + delta)  # ✅ Плавно перемещаем объект
+                self.start_point = event.scenePos()  # ✅ Обновляем начальную точку
             return
 
         # ✅ Обычный режим рисования
@@ -121,23 +124,36 @@ class DrawingScene(QGraphicsScene):
             elif self.shape_mode == "line":
                 self.temp_item = self.addLine(self.start_point.x(), self.start_point.y(), event.scenePos().x(),
                                               event.scenePos().y(), pen)
+                self.temp_item.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
 
     def mouseReleaseEvent(self, event):
-        """Завершение рисования"""
+        """Завершение перемещения объекта"""
+        if self.shape_mode is None:
+            self.selected_object = None  # ✅ Отпускаем объект после перемещения
+            return
+
         if self.shape_mode in ["circle", "square", "line"] and self.temp_item:
             drawable = DrawableObject(self.shape_mode, self.temp_item)
-            self.objects.append(drawable)  # ✅ Добавляем объект в список
+            self.temp_item.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
+            self.objects.append(drawable)
             self.temp_item = None
         self.drawing = False
 
     def enable_selection(self):
-        """Включает возможность выделять и перемещать фигуры"""
+        """Включает возможность выделять и перемещать фигуры, кроме фонового изображения"""
         for obj in self.objects:
-            obj.item.setFlags(
-                QGraphicsItem.ItemIsSelectable |
-                QGraphicsItem.ItemIsMovable |
-                QGraphicsItem.ItemSendsScenePositionChanges  # ✅ Обновление позиции при перемещении
-            )
+            if obj.item != self.image_item:  # ✅ Запрещаем перемещение изображения
+                obj.item.setFlags(
+                    QGraphicsItem.ItemIsSelectable |
+                    QGraphicsItem.ItemIsMovable |
+                    QGraphicsItem.ItemSendsScenePositionChanges  # ✅ Обновление позиции при перемещении
+                )
+
+        # ✅ Применяем флаги ко всем элементам, кроме фонового изображения
+        for item in self.items():
+            if isinstance(item, QGraphicsItem) and item != self.image_item and item not in [obj.item for obj in
+                                                                                            self.objects]:
+                item.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
 
     def contextMenuEvent(self, event):
         """Обрабатывает клик ПКМ (правой кнопкой) по объекту"""
