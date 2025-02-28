@@ -25,7 +25,7 @@ class DrawingScene(QGraphicsScene):
         super().__init__(parent)
         self.pen_color = QColor(0, 255, 0, 255)  # Зеленый цвет по умолчанию
         self.pen_width = 2  # Толщина кисти
-        self.shape_mode = "free"  # Режим рисования
+        self.shape_mode = None
         self.current_path = None
         self.current_item = None
         self.start_point = None

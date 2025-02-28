@@ -21,6 +21,8 @@ class Editor(QMainWindow, Ui_MainWindow):
         self.scene = DrawingScene(self)
         self.graphicsView.setScene(self.scene)
 
+        self.scene.set_drawing_mode(None)
+
         # ✅ Добавляем кнопку "Импорт"
         self.import_action = QAction("Импорт", self)
         self.menuimport.addAction(self.import_action)
@@ -136,9 +138,11 @@ class Editor(QMainWindow, Ui_MainWindow):
 
         # ✅ Устанавливаем режим в `DrawingScene`
         if tool == "mouse":
-            self.scene.set_drawing_mode(None)  # Отключаем рисование
-            self.scene.enable_selection()  # Включаем выделение объектов
+            self.scene.set_drawing_mode(None)  # ✅ Отключаем рисование
+            self.scene.enable_selection()  # ✅ Включаем выделение объектов
+            self.mouse_action.setChecked(True)  # ✅ Активируем кнопку "Мышь"
         else:
-            self.scene.set_drawing_mode(tool)  # Выбираем инструмент рисования
+            self.scene.set_drawing_mode(tool)
+
 
 
