@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog
 from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QRectF
 
 
 class DrawableObject:
@@ -119,8 +119,13 @@ class DrawingScene(QGraphicsScene):
                 radius = abs(event.scenePos().x() - self.start_point.x())
                 self.temp_item = self.addEllipse(self.start_point.x(), self.start_point.y(), radius, radius, pen)
             elif self.shape_mode == "square":
-                size = abs(event.scenePos().x() - self.start_point.x())
-                self.temp_item = self.addRect(self.start_point.x(), self.start_point.y(), size, size, pen)
+                if self.start_point is None:
+                    return
+                if self.temp_item:
+                    self.removeItem(self.temp_item)
+                x, y = self.start_point.x(), self.start_point.y()
+                width, height = event.scenePos().x() - x, event.scenePos().y() - y
+                self.temp_item = self.addRect(QRectF(x, y, width, height), pen)
             elif self.shape_mode == "line":
                 self.temp_item = self.addLine(self.start_point.x(), self.start_point.y(), event.scenePos().x(),
                                               event.scenePos().y(), pen)
