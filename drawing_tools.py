@@ -57,16 +57,18 @@ class DrawingTools(QDockWidget, Ui_DockWidget):
             "circle": "icons/circle.svg",
             "square": "icons/stop.svg",
             "line": "icons/algorithm.svg",
+
         }
 
-        if self.scene and self.scene.shape_mode in icons:
-            icon_path = icons[self.scene.shape_mode]
-            self.pen_button.setIcon(QIcon(icon_path))  # ✅ Меняем иконку
-
-        # Меняем цвет кнопки в зависимости от цвета кисти
         if self.scene:
-            color = self.scene.pen_color.name()
-            self.pen_button.setStyleSheet(f"background-color: {color}; border-radius: 5px;")
+            # ✅ Меняем иконку в зависимости от выбранного инструмента
+            icon_path = icons.get(self.scene.shape_mode, "icons/attribution-pencil.svg")  # По умолчанию - карандаш
+            self.pen_button.setIcon(QIcon(icon_path))
+
+            # ✅ Обновляем цвет кнопки (с учетом прозрачности)
+            color = self.scene.pen_color
+            rgba_color = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})"
+            self.pen_button.setStyleSheet(f"background-color: {rgba_color}; border-radius: 5px;")
 
     def set_drawing_mode(self, mode):
         """Устанавливает режим рисования и обновляет кнопку 'pen'"""

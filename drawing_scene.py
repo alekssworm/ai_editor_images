@@ -118,14 +118,21 @@ class DrawingScene(QGraphicsScene):
             if self.shape_mode == "circle":
                 radius = abs(event.scenePos().x() - self.start_point.x())
                 self.temp_item = self.addEllipse(self.start_point.x(), self.start_point.y(), radius, radius, pen)
+
+        
+
             elif self.shape_mode == "square":
                 if self.start_point is None:
                     return
                 if self.temp_item:
                     self.removeItem(self.temp_item)
-                x, y = self.start_point.x(), self.start_point.y()
-                width, height = event.scenePos().x() - x, event.scenePos().y() - y
-                self.temp_item = self.addRect(QRectF(x, y, width, height), pen)
+
+                x1, y1 = self.start_point.x(), self.start_point.y()
+                x2, y2 = event.scenePos().x(), event.scenePos().y()
+
+                rect = QRectF(x1, y1, x2 - x1, y2 - y1).normalized()  # ✅ Исправление!
+                self.temp_item = self.addRect(rect, pen)
+
             elif self.shape_mode == "line":
                 self.temp_item = self.addLine(self.start_point.x(), self.start_point.y(), event.scenePos().x(),
                                               event.scenePos().y(), pen)
