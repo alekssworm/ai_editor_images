@@ -37,15 +37,17 @@ class AiPanel(QDockWidget, Ui_DockWidget):
         """Создаёт новую сцену и добавляет её внутрь QScrollArea"""
         self.sceen_count += 1  # Увеличиваем номер сцены
 
-        # Создаем новый UI_sceen
+        # Создаём новый UI_sceen
         new_sceen = QWidget(self)
         ui_sceen = Ui_Frame()
         ui_sceen.setupUi(new_sceen)
 
         self.sceens.append(ui_sceen)
 
-        # ✅ Подключаем кнопку `pen` к `open_drawing_settings`
-        ui_sceen.pen.clicked.connect(self.parent().open_drawing_settings)
+        parent_editor = self.parentWidget()
+        if parent_editor:
+            # ✅ Исправленный вызов `open_drawing_settings`
+            ui_sceen.pen.clicked.connect(lambda _, btn=ui_sceen.pen: parent_editor.open_drawing_settings(btn))
 
         # Устанавливаем заголовок сцены
         ui_sceen.groupBox_3.setTitle(f"Sceen {self.sceen_count}")
@@ -58,4 +60,11 @@ class AiPanel(QDockWidget, Ui_DockWidget):
 
         # ✅ Обновляем размеры, чтобы scrollArea понимал, что контент увеличился
         self.scrollAreaWidgetContents.adjustSize()
+
+
+
+
+
+
+
 

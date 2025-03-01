@@ -62,10 +62,14 @@ class Editor(QMainWindow, Ui_MainWindow):
         self.ai_panel.show()
         self.ai_panel.raise_()
 
-    def open_drawing_settings(self):
-        """Открывает `ui_settings_draw`"""
+    def open_drawing_settings(self, pen_button=None, *_):
+        """Открывает панель рисования, передавая конкретную кнопку `pen`"""
         if self.drawing_tools is None:
             self.create_drawing_tools()
+
+        if pen_button:
+            self.drawing_tools.set_pen_button(pen_button)  # ✅ Передаём кнопку
+
         self.drawing_tools.show()
 
     def create_drawing_tools(self):
@@ -83,13 +87,15 @@ class Editor(QMainWindow, Ui_MainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self.drawing_tools)  # ✅ Нужно добавить, но без привязки
         self.drawing_tools.hide()  # ✅ Скрываем при запуске
 
-    def open_drawing_settings(self):
-            """Открывает `ui_settings_draw` как отдельное окно"""
-            if self.drawing_tools is None:
-                self.create_drawing_tools()
+    def open_drawing_settings(self, pen_button=None, *args):
+        """Открывает панель рисования, передавая конкретную кнопку `pen`"""
+        if self.drawing_tools is None:
+            self.create_drawing_tools()
 
-            self.drawing_tools.show()
-            self.drawing_tools.raise_()  # ✅ Поднимаем окно наверх
+        if pen_button:
+            self.drawing_tools.set_pen_button(pen_button)  # ✅ Передаём кнопку
+
+        self.drawing_tools.show()
 
     def choose_color(self):
         """Выбирает цвет кисти и обновляет цвет кнопки 'pen'"""

@@ -9,7 +9,7 @@ class DrawingTools(QDockWidget, Ui_DockWidget):
         super().__init__(parent)
         self.setupUi(self)
         self.scene = None  # Ссылка на сцену
-        self.pen_button = pen_button  # ✅ Сохраняем ссылку на `pen`
+        self.pen_button = None
 
         self.pushButton_30.clicked.connect(lambda: self.set_drawing_mode("free"))
         self.pushButton_21.clicked.connect(lambda: self.set_drawing_mode("circle"))
@@ -47,14 +47,14 @@ class DrawingTools(QDockWidget, Ui_DockWidget):
         if color.isValid() and self.scene:
             self.scene.set_pen_color(color)
 
-    def update_pen_button(self):
-        """Меняет иконку и цвет кнопки 'pen' в зависимости от режима и цвета"""
-        if not self.parent() or not hasattr(self.parent(), 'ai_panel'):
-            return
+    def set_pen_button(self, pen_button):
+        """Устанавливает, какая кнопка 'pen' была нажата"""
+        self.pen_button = pen_button
 
-        ai_panel = self.parent().ai_panel  # Получаем доступ к панель инструментов AI
-        if not ai_panel:
-            return
+    def update_pen_button(self):
+        """Обновляет только ту кнопку 'pen', которая вызвала панель"""
+        if not self.pen_button or not self.scene:
+            return  # Если кнопка не задана, ничего не делаем
 
         icons = {
             "free": "icons/attribution-pencil.svg",
@@ -63,17 +63,14 @@ class DrawingTools(QDockWidget, Ui_DockWidget):
             "line": "icons/algorithm.svg",
         }
 
-        # ✅ Обновляем все кнопки `pen` во всех сценах
-        for sceen in ai_panel.sceens:
-            if not hasattr(sceen, 'pen'):
-                continue  # Пропускаем, если нет `pen`
+        # ✅ Меняем иконку только у нажатой кнопки
+        icon_path = icons.get(self.scene.shape_mode, "icons/attribution-pencil.svg")
+        self.pen_button.setIcon(QIcon(icon_path))
 
-            icon_path = icons.get(self.scene.shape_mode, "icons/attribution-pencil.svg")
-            sceen.pen.setIcon(QIcon(icon_path))
-
-            color = self.scene.pen_color
-            rgba_color = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})"
-            sceen.pen.setStyleSheet(f"background-color: {rgba_color}; border-radius: 5px;")
+        # ✅ Меняем цвет только у нажатой кнопки
+        color = self.scene.pen_color
+        rgba_color = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})"
+        self.pen_button.setStyleSheet(f"background-color: {rgba_color}; border-radius: 5px;")
 
     def set_drawing_mode(self, mode):
         """Устанавливает режим рисования и обновляет кнопку 'pen'"""
