@@ -49,7 +49,11 @@ class DrawingTools(QDockWidget, Ui_DockWidget):
 
     def update_pen_button(self):
         """Меняет иконку и цвет кнопки 'pen' в зависимости от режима и цвета"""
-        if not self.pen_button:  # Если кнопка не передана, ничего не делаем
+        if not self.parent() or not hasattr(self.parent(), 'ai_panel'):
+            return
+
+        ai_panel = self.parent().ai_panel  # Получаем доступ к панель инструментов AI
+        if not ai_panel:
             return
 
         icons = {
@@ -57,18 +61,19 @@ class DrawingTools(QDockWidget, Ui_DockWidget):
             "circle": "icons/circle.svg",
             "square": "icons/stop.svg",
             "line": "icons/algorithm.svg",
-
         }
 
-        if self.scene:
-            # ✅ Меняем иконку в зависимости от выбранного инструмента
-            icon_path = icons.get(self.scene.shape_mode, "icons/attribution-pencil.svg")  # По умолчанию - карандаш
-            self.pen_button.setIcon(QIcon(icon_path))
+        # ✅ Обновляем все кнопки `pen` во всех сценах
+        for sceen in ai_panel.sceens:
+            if not hasattr(sceen, 'pen'):
+                continue  # Пропускаем, если нет `pen`
 
-            # ✅ Обновляем цвет кнопки (с учетом прозрачности)
+            icon_path = icons.get(self.scene.shape_mode, "icons/attribution-pencil.svg")
+            sceen.pen.setIcon(QIcon(icon_path))
+
             color = self.scene.pen_color
             rgba_color = f"rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})"
-            self.pen_button.setStyleSheet(f"background-color: {rgba_color}; border-radius: 5px;")
+            sceen.pen.setStyleSheet(f"background-color: {rgba_color}; border-radius: 5px;")
 
     def set_drawing_mode(self, mode):
         """Устанавливает режим рисования и обновляет кнопку 'pen'"""

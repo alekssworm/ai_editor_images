@@ -39,6 +39,13 @@ class Editor(QMainWindow, Ui_MainWindow):
 
         self.create_tools_menu()
 
+
+
+        # ✅ Проверяем, что панель создана перед вызовом метода
+        if self.drawing_tools:
+            self.drawing_tools.update_pen_button()
+
+
     def import_image(self):
         """Открывает диалог выбора файла и загружает изображение"""
         file_path, _ = QFileDialog.getOpenFileName(self, "Выберите изображение", "",

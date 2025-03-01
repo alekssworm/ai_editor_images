@@ -9,6 +9,7 @@ class AiPanel(QDockWidget, Ui_DockWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
+        self.sceens = []  # ✅ Список всех сцен
 
         # ✅ Устанавливаем минимальную ширину панели, чтобы она не была слишком узкой
         self.setMinimumWidth(300)  # Можно настроить ширину под ваш дизайн
@@ -40,6 +41,8 @@ class AiPanel(QDockWidget, Ui_DockWidget):
         new_sceen = QWidget(self)
         ui_sceen = Ui_Frame()
         ui_sceen.setupUi(new_sceen)
+
+        self.sceens.append(ui_sceen)
 
         # ✅ Подключаем кнопку `pen` к `open_drawing_settings`
         ui_sceen.pen.clicked.connect(self.parent().open_drawing_settings)
