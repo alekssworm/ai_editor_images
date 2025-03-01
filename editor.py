@@ -47,10 +47,9 @@ class Editor(QMainWindow, Ui_MainWindow):
             self.scene.load_image(file_path)
 
     def open_ai_panel(self):
-        """Открывает `AiPanel` и подключает кнопку `pen`"""
+        """Открывает `AiPanel`"""
         if self.ai_panel is None:
             self.ai_panel = AiPanel(self)
-            self.ai_panel.pen.clicked.connect(self.open_drawing_settings)  # Подключаем кнопку
             self.addDockWidget(Qt.RightDockWidgetArea, self.ai_panel)
 
         self.ai_panel.show()
@@ -67,7 +66,7 @@ class Editor(QMainWindow, Ui_MainWindow):
         if self.ai_panel is None:
             self.open_ai_panel()  # ✅ Убедимся, что `ai_panel` создан
 
-        self.drawing_tools = DrawingTools(self, self.ai_panel.pen)  # ✅ Передаем `pen`
+        self.drawing_tools = DrawingTools(self)  # ✅ Убираем передачу `pen`
         self.drawing_tools.set_scene(self.scene)
 
         # ✅ Делаем `ui_settings_draw` отдельным окном
