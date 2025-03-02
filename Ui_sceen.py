@@ -52,7 +52,7 @@ class Ui_Frame(object):
         self.hide_unhide = QPushButton(self.splitter)
         self.hide_unhide.setObjectName(u"hide_unhide")
         icon = QIcon()
-        icon.addFile(u"icons/reshot-icon-arrow-chevron-down-EUCMLYADT9.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u"icons/arrow chevron down.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.hide_unhide.setIcon(icon)
         self.hide_unhide.setIconSize(QSize(24, 24))
         self.splitter.addWidget(self.hide_unhide)

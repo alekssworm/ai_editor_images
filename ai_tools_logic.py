@@ -1,16 +1,10 @@
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QFrame
-from PySide6.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QScrollArea, QSizePolicy
+from PySide6.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QScrollArea, QSizePolicy, QPushButton
 from PySide6.QtCore import Qt
 from ui_ai_panel import Ui_DockWidget  # Импорт UI панели AI
 from Ui_sceen import Ui_Frame  # Импорт UI сцены
 from sub_box import Ui_Frame as Ui_sub
-
-
-class SceenWidget(QWidget, Ui_Frame):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setupUi(self)
 
 class AiPanel(QDockWidget, Ui_DockWidget):
     """Панель инструментов AI с фиксированной шириной"""
@@ -77,7 +71,11 @@ class AiPanel(QDockWidget, Ui_DockWidget):
         # ✅ Обновляем размеры, чтобы scrollArea понимал, что контент увеличился
         self.scrollAreaWidgetContents.adjustSize()
 
-        # ✅ Подключаем кнопку hide_unhide к скрытию/разворачиванию sub_sceen
+        hide_unhide_button = new_sceen.findChild(QPushButton, "hide_unhide")
+        if hide_unhide_button:
+            hide_unhide_button.clicked.connect(lambda: self.toggle_sub_sceen_visibility(new_sceen))
+        else:
+            print("Ошибка: Кнопка hide_unhide не найдена в сцене")
 
     def add_new_sub_sceen(self, parent_sceen):
         """Создаёт новую под-сцену и добавляет её внутрь scrollArea, расширяя его"""
@@ -127,22 +125,23 @@ class AiPanel(QDockWidget, Ui_DockWidget):
         scroll_area.setWidget(container)
         self.scrollAreaWidgetContents.adjustSize()
 
+    def toggle_sub_sceen_visibility(self, parent_sceen):
+        """Переключает видимость sub_sceen"""
+        scroll_area = parent_sceen.findChild(QScrollArea, "scrollArea")
+        if scroll_area is None:
+            print("Ошибка: scrollArea не найден в parent_sceen")
+            return
 
-def toggle_sub_sceen_visibility(self, scene):
-    """Сворачивает или разворачивает sub_sceen в данной сцене"""
+        if scroll_area.isVisible():
+            scroll_area.hide()
+        else:
+            scroll_area.show()
 
-    scroll_area = scene.findChild(QScrollArea, "scrollArea")
-    if scroll_area is None:
-        print("Ошибка: scrollArea не найден в сцене")
-        return
 
-    if scroll_area.isVisible():
-        scroll_area.hide()  # ✅ Скрываем все sub_sceen
-        scene.hide_unhide.setIcon(QIcon("icons/reshot-icon-arrow-chevron-down-EUCMLYADT9.svg"))  # Стрелка вниз
-    else:
-        scroll_area.show()  # ✅ Показываем sub_sceen
-        scene.hide_unhide.setIcon(QIcon("icons/reshot-icon-arrow-chevron-up-EUCMLYADT9.svg"))  # Стрелка вверх
 
-    # ✅ Автоматически корректируем высоту сцены
-    scene.setMinimumHeight(scene.sizeHint().height())
+
+
+
+
+
 

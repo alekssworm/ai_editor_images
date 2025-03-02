@@ -80,7 +80,7 @@
          </property>
          <property name="icon">
           <iconset>
-           <normaloff>icons/reshot-icon-arrow-chevron-down-EUCMLYADT9.svg</normaloff>icons/reshot-icon-arrow-chevron-down-EUCMLYADT9.svg</iconset>
+           <normaloff>icons/arrow chevron down.svg</normaloff>icons/arrow chevron down.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
