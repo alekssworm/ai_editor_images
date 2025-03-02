@@ -16,14 +16,14 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGridLayout,
-    QGroupBox, QPushButton, QSizePolicy, QSpacerItem,
-    QSplitter, QWidget)
+    QGroupBox, QPushButton, QScrollArea, QSizePolicy,
+    QSpacerItem, QSplitter, QWidget)
 
 class Ui_Frame(object):
     def setupUi(self, Frame):
         if not Frame.objectName():
             Frame.setObjectName(u"Frame")
-        Frame.resize(400, 142)
+        Frame.resize(325, 198)
         self.gridLayout = QGridLayout(Frame)
         self.gridLayout.setObjectName(u"gridLayout")
         self.groupBox_3 = QGroupBox(Frame)
@@ -41,6 +41,31 @@ class Ui_Frame(object):
         self.gridLayout_6.setSpacing(0)
         self.gridLayout_6.setObjectName(u"gridLayout_6")
         self.gridLayout_6.setContentsMargins(0, 0, 0, 0)
+        self.scrollArea = QScrollArea(self.groupBox_3)
+        self.scrollArea.setObjectName(u"scrollArea")
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollAreaWidgetContents_3 = QWidget()
+        self.scrollAreaWidgetContents_3.setObjectName(u"scrollAreaWidgetContents_3")
+        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, 0, 303, 54))
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents_3)
+
+        self.gridLayout_6.addWidget(self.scrollArea, 2, 0, 1, 1)
+
+        self.splitter_17 = QSplitter(self.groupBox_3)
+        self.splitter_17.setObjectName(u"splitter_17")
+        sizePolicy.setHeightForWidth(self.splitter_17.sizePolicy().hasHeightForWidth())
+        self.splitter_17.setSizePolicy(sizePolicy)
+        self.splitter_17.setOrientation(Qt.Orientation.Horizontal)
+        self.splitter_17.setHandleWidth(0)
+        self.pushButton_48 = QPushButton(self.splitter_17)
+        self.pushButton_48.setObjectName(u"pushButton_48")
+        self.splitter_17.addWidget(self.pushButton_48)
+        self.pushButton_52 = QPushButton(self.splitter_17)
+        self.pushButton_52.setObjectName(u"pushButton_52")
+        self.splitter_17.addWidget(self.pushButton_52)
+
+        self.gridLayout_6.addWidget(self.splitter_17, 6, 0, 1, 1)
+
         self.splitter_14 = QSplitter(self.groupBox_3)
         self.splitter_14.setObjectName(u"splitter_14")
         self.splitter_14.setOrientation(Qt.Orientation.Vertical)
@@ -49,15 +74,15 @@ class Ui_Frame(object):
         self.splitter_16.setObjectName(u"splitter_16")
         self.splitter_16.setOrientation(Qt.Orientation.Horizontal)
         self.splitter_16.setHandleWidth(0)
-        self.pushButton_47 = QPushButton(self.splitter_16)
-        self.pushButton_47.setObjectName(u"pushButton_47")
-        sizePolicy.setHeightForWidth(self.pushButton_47.sizePolicy().hasHeightForWidth())
-        self.pushButton_47.setSizePolicy(sizePolicy)
+        self.add_sub_sceen = QPushButton(self.splitter_16)
+        self.add_sub_sceen.setObjectName(u"add_sub_sceen")
+        sizePolicy.setHeightForWidth(self.add_sub_sceen.sizePolicy().hasHeightForWidth())
+        self.add_sub_sceen.setSizePolicy(sizePolicy)
         icon = QIcon()
         icon.addFile(u"icons/plus-small.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.pushButton_47.setIcon(icon)
-        self.pushButton_47.setIconSize(QSize(30, 30))
-        self.splitter_16.addWidget(self.pushButton_47)
+        self.add_sub_sceen.setIcon(icon)
+        self.add_sub_sceen.setIconSize(QSize(30, 30))
+        self.splitter_16.addWidget(self.add_sub_sceen)
         self.pushButton_12 = QPushButton(self.splitter_16)
         self.pushButton_12.setObjectName(u"pushButton_12")
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
@@ -132,27 +157,12 @@ class Ui_Frame(object):
 
         self.gridLayout_6.addWidget(self.splitter_10, 0, 0, 1, 1)
 
-        self.splitter_17 = QSplitter(self.groupBox_3)
-        self.splitter_17.setObjectName(u"splitter_17")
-        sizePolicy.setHeightForWidth(self.splitter_17.sizePolicy().hasHeightForWidth())
-        self.splitter_17.setSizePolicy(sizePolicy)
-        self.splitter_17.setOrientation(Qt.Orientation.Horizontal)
-        self.splitter_17.setHandleWidth(0)
-        self.pushButton_48 = QPushButton(self.splitter_17)
-        self.pushButton_48.setObjectName(u"pushButton_48")
-        self.splitter_17.addWidget(self.pushButton_48)
-        self.pushButton_52 = QPushButton(self.splitter_17)
-        self.pushButton_52.setObjectName(u"pushButton_52")
-        self.splitter_17.addWidget(self.pushButton_52)
 
-        self.gridLayout_6.addWidget(self.splitter_17, 3, 0, 1, 1)
-
-
-        self.gridLayout.addWidget(self.groupBox_3, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.groupBox_3, 1, 0, 1, 1)
 
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
-        self.gridLayout.addItem(self.verticalSpacer, 1, 0, 1, 1)
+        self.gridLayout.addItem(self.verticalSpacer, 2, 0, 1, 1)
 
 
         self.retranslateUi(Frame)
@@ -163,7 +173,9 @@ class Ui_Frame(object):
     def retranslateUi(self, Frame):
         Frame.setWindowTitle(QCoreApplication.translate("Frame", u"Frame", None))
         self.groupBox_3.setTitle(QCoreApplication.translate("Frame", u"Sceen 1", None))
-        self.pushButton_47.setText("")
+        self.pushButton_48.setText(QCoreApplication.translate("Frame", u"add obj", None))
+        self.pushButton_52.setText(QCoreApplication.translate("Frame", u"render", None))
+        self.add_sub_sceen.setText("")
         self.pushButton_12.setText("")
         self.pen.setText("")
         self.pushButton_13.setText("")
@@ -177,7 +189,5 @@ class Ui_Frame(object):
         self.pushButton_49.setText("")
         self.pushButton_50.setText("")
         self.pushButton_51.setText("")
-        self.pushButton_48.setText(QCoreApplication.translate("Frame", u"add obj", None))
-        self.pushButton_52.setText(QCoreApplication.translate("Frame", u"render", None))
     # retranslateUi
 

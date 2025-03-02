@@ -111,7 +111,7 @@
          <property name="handleWidth">
           <number>0</number>
          </property>
-         <widget class="QPushButton" name="pushButton_47">
+         <widget class="QPushButton" name="add_sub_sceen">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
