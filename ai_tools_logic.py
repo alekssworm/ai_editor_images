@@ -1,9 +1,16 @@
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QFrame
 from PySide6.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QScrollArea, QSizePolicy
 from PySide6.QtCore import Qt
 from ui_ai_panel import Ui_DockWidget  # Импорт UI панели AI
 from Ui_sceen import Ui_Frame  # Импорт UI сцены
 from sub_box import Ui_Frame as Ui_sub
+
+
+class SceenWidget(QWidget, Ui_Frame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setupUi(self)
 
 class AiPanel(QDockWidget, Ui_DockWidget):
     """Панель инструментов AI с фиксированной шириной"""
@@ -70,21 +77,25 @@ class AiPanel(QDockWidget, Ui_DockWidget):
         # ✅ Обновляем размеры, чтобы scrollArea понимал, что контент увеличился
         self.scrollAreaWidgetContents.adjustSize()
 
+        # ✅ Подключаем кнопку hide_unhide к скрытию/разворачиванию sub_sceen
+
     def add_new_sub_sceen(self, parent_sceen):
-        """Создаёт новую под-сцену и добавляет её внутрь scrollArea"""
+        """Создаёт новую под-сцену и добавляет её внутрь scrollArea, расширяя его"""
 
         scroll_area = parent_sceen.findChild(QScrollArea, "scrollArea")
         if scroll_area is None:
             print("Ошибка: scrollArea не найден в parent_sceen")
             return
 
-        new_sub_sceen = QWidget()  # ✅ Используем QWidget вместо QFrame
+        new_sub_sceen = QWidget()  # Создаем под-сцену
         ui_new_sub_sceen = Ui_sub()
-        ui_new_sub_sceen.setupUi(new_sub_sceen)  # ✅ Теперь это не вызовет ошибку
+        ui_new_sub_sceen.setupUi(new_sub_sceen)
 
         if scroll_area.widget() is None:
             container = QWidget()
             layout = QVBoxLayout(container)
+            layout.setSpacing(0)  # ✅ Убираем расстояния между sub_sceen
+            layout.setContentsMargins(0, 0, 0, 0)  # ✅ Убираем отступы
             scroll_area.setWidget(container)
         else:
             container = scroll_area.widget()
@@ -92,10 +103,20 @@ class AiPanel(QDockWidget, Ui_DockWidget):
 
         if layout is None:
             layout = QVBoxLayout()
+            layout.setSpacing(0)  # ✅ Убираем расстояния между sub_sceen
+            layout.setContentsMargins(0, 0, 0, 0)  # ✅ Убираем отступы
             container.setLayout(layout)
 
         layout.addWidget(new_sub_sceen)
         self.sceens.append(ui_new_sub_sceen)
+
+        # ✅ Запрещаем прокрутку и увеличиваем высоту scrollArea
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        scroll_area.setMinimumHeight(container.sizeHint().height())
+
+        # ✅ Делаем groupBox_3 выше, чтобы вместить все sub_sceen
+        parent_sceen.setMinimumHeight(parent_sceen.sizeHint().height() + new_sub_sceen.sizeHint().height())
 
         if hasattr(ui_new_sub_sceen, "pen"):
             parent_editor = self.parentWidget()
@@ -107,5 +128,21 @@ class AiPanel(QDockWidget, Ui_DockWidget):
         self.scrollAreaWidgetContents.adjustSize()
 
 
+def toggle_sub_sceen_visibility(self, scene):
+    """Сворачивает или разворачивает sub_sceen в данной сцене"""
 
+    scroll_area = scene.findChild(QScrollArea, "scrollArea")
+    if scroll_area is None:
+        print("Ошибка: scrollArea не найден в сцене")
+        return
+
+    if scroll_area.isVisible():
+        scroll_area.hide()  # ✅ Скрываем все sub_sceen
+        scene.hide_unhide.setIcon(QIcon("icons/reshot-icon-arrow-chevron-down-EUCMLYADT9.svg"))  # Стрелка вниз
+    else:
+        scroll_area.show()  # ✅ Показываем sub_sceen
+        scene.hide_unhide.setIcon(QIcon("icons/reshot-icon-arrow-chevron-up-EUCMLYADT9.svg"))  # Стрелка вверх
+
+    # ✅ Автоматически корректируем высоту сцены
+    scene.setMinimumHeight(scene.sizeHint().height())
 
