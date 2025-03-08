@@ -37,8 +37,6 @@ class AiPanel(QDockWidget, Ui_DockWidget):
         # Подключаем кнопку "add_sceen" к созданию новой сцены
         self.add_sceen.clicked.connect(self.add_new_sceen)
 
-
-
     def add_new_sceen(self):
         """Создаёт новую сцену и добавляет её внутрь QScrollArea"""
         self.sceen_count += 1  # Увеличиваем номер сцены
@@ -48,12 +46,14 @@ class AiPanel(QDockWidget, Ui_DockWidget):
         ui_sceen = Ui_Frame()
         ui_sceen.setupUi(new_sceen)
 
-        self.sceens.append(ui_sceen)
+        new_sceen.objects = []  # ✅ Добавляем список для хранения объектов
+        self.sceens.append(new_sceen)  # ✅ Сохраняем только сам виджет
 
         parent_editor = self.parentWidget()
         if parent_editor:
-            # ✅ Исправленный вызов `open_drawing_settings`
-            ui_sceen.pen.clicked.connect(lambda _, btn=ui_sceen.pen: parent_editor.open_drawing_settings(btn))
+            # ✅ Теперь передаём `new_sceen`, а не `ui_sceen`, так как это реальный виджет
+            ui_sceen.pen.clicked.connect(
+                lambda _, btn=ui_sceen.pen: parent_editor.open_drawing_settings(btn, new_sceen))
 
         # ✅ Подключаем кнопку add_sub_sceen в момент создания сцены
         if hasattr(ui_sceen, "add_sub_sceen"):
@@ -85,10 +85,14 @@ class AiPanel(QDockWidget, Ui_DockWidget):
             print("Ошибка: scrollArea не найден в parent_sceen")
             return
 
-        new_sub_sceen = QWidget()  # Создаем под-сцену
-        ui_new_sub_sceen = Ui_sub()
-        ui_new_sub_sceen.setupUi(new_sub_sceen)
+        new_sub_sceen = QWidget()  # Создаём под-сцену (QWidget)
+        ui_new_sub_sceen = Ui_sub()  # Загружаем UI
+        ui_new_sub_sceen.setupUi(new_sub_sceen)  # Применяем UI к виджету
 
+        new_sub_sceen.objects = []  # ✅ Добавляем список объектов для хранения нарисованных элементов
+        parent_sceen.objects.append(new_sub_sceen)  # ✅ Связываем под-сцену с родительской сценой
+
+        # Если scrollArea не имеет контейнера, создаём его
         if scroll_area.widget() is None:
             container = QWidget()
             layout = QVBoxLayout(container)
@@ -99,29 +103,33 @@ class AiPanel(QDockWidget, Ui_DockWidget):
             container = scroll_area.widget()
             layout = container.layout()
 
+        # Если layout не создан, создаём его
         if layout is None:
             layout = QVBoxLayout()
-            layout.setSpacing(0)  # ✅ Убираем расстояния между sub_sceen
-            layout.setContentsMargins(0, 0, 0, 0)  # ✅ Убираем отступы
+            layout.setSpacing(0)
+            layout.setContentsMargins(0, 0, 0, 0)
             container.setLayout(layout)
 
-        layout.addWidget(new_sub_sceen)
-        self.sceens.append(ui_new_sub_sceen)
+        layout.addWidget(new_sub_sceen)  # ✅ Добавляем под-сцену в layout
+        self.sceens.append(new_sub_sceen)  # ✅ Добавляем под-сцену в список `sceens`
 
-        # ✅ Запрещаем прокрутку и увеличиваем высоту scrollArea
+        # ✅ Обновляем параметры scrollArea
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         scroll_area.setMinimumHeight(container.sizeHint().height())
 
-        # ✅ Делаем groupBox_3 выше, чтобы вместить все sub_sceen
+        # ✅ Делаем parent_sceen выше, чтобы вместить новые sub_sceen
         parent_sceen.setMinimumHeight(parent_sceen.sizeHint().height() + new_sub_sceen.sizeHint().height())
 
+        # ✅ Подключаем `pen` так, чтобы рисование происходило именно в `new_sub_sceen`
         if hasattr(ui_new_sub_sceen, "pen"):
             parent_editor = self.parentWidget()
             if parent_editor:
                 ui_new_sub_sceen.pen.clicked.connect(
-                    lambda _, btn=ui_new_sub_sceen.pen: parent_editor.open_drawing_settings(btn))
+                    lambda _, btn=ui_new_sub_sceen.pen: parent_editor.open_drawing_settings(btn, new_sub_sceen)
+                )
 
+        # ✅ Обновляем размеры `scrollArea`
         scroll_area.setWidget(container)
         self.scrollAreaWidgetContents.adjustSize()
 

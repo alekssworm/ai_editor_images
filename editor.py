@@ -87,13 +87,16 @@ class Editor(QMainWindow, Ui_MainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self.drawing_tools)  # ✅ Нужно добавить, но без привязки
         self.drawing_tools.hide()  # ✅ Скрываем при запуске
 
-    def open_drawing_settings(self, pen_button=None, *args):
-        """Открывает панель рисования, передавая конкретную кнопку `pen`"""
+    def open_drawing_settings(self, pen_button=None, sceen=None):
+        """Открывает панель рисования и устанавливает active_scene"""
         if self.drawing_tools is None:
             self.create_drawing_tools()
 
         if pen_button:
-            self.drawing_tools.set_pen_button(pen_button)  # ✅ Передаём кнопку
+            self.drawing_tools.set_pen_button(pen_button)
+
+        if sceen:
+            self.scene.set_active_scene(sceen)  # ✅ Устанавливаем текущий sceen
 
         self.drawing_tools.show()
 

@@ -34,9 +34,12 @@ class DrawingScene(QGraphicsScene):
         self.drawing = False
         self.temp_item = None
         self.objects = []  # ✅ Список всех объектов на сцене
+        self.active_scene = None  # ✅ Текущий sceen или sub_sceen
         self.selected_object = None
 
-
+    def set_active_scene(self, scene):
+        """Устанавливает, в каком sceen идет рисование"""
+        self.active_scene = scene
 
     def set_drawing_mode(self, mode):
         """Устанавливает режим рисования"""
@@ -71,27 +74,19 @@ class DrawingScene(QGraphicsScene):
         self.image_rect = self.image_item.boundingRect()
 
     def mousePressEvent(self, event):
-        """Обрабатывает нажатие мыши, чтобы перемещать объекты плавно"""
-        item = self.itemAt(event.scenePos(), self.views()[0].transform())
+        """Начинаем рисование"""
+        if not self.active_scene:
+            return  # Если не выбран sceen или sub_sceen, не рисуем
 
-        if self.shape_mode is None:  # ✅ Если включён режим "Мышь"
-            if item and item.isSelected() and item != self.image_item:
-                self.start_point = event.scenePos()  # ✅ Запоминаем начальную точку перемещения
-                self.selected_object = item  # ✅ Запоминаем объект, который двигаем
-            else:
-                self.clearSelection()  # ✅ Снимаем выделение со всех объектов
-                if item and item != self.image_item:
-                    item.setSelected(True)  # ✅ Выделяем объект
-            return
-
-        # Обычный режим рисования
         self.drawing = True
         pen = QPen(self.pen_color, self.pen_width)
+        self.start_point = event.scenePos()
+
         if self.shape_mode == "free":
             self.current_path = QPainterPath(event.scenePos())
             self.current_item = self.addPath(self.current_path, pen)
         elif self.shape_mode in ["circle", "square", "line"]:
-            self.start_point = event.scenePos()
+            self.temp_item = None  # Будет создан в mouseMoveEvent
 
     def mouseMoveEvent(self, event):
         """Обрабатывает перемещение выделенного объекта с более плавным управлением"""
@@ -139,16 +134,18 @@ class DrawingScene(QGraphicsScene):
                 self.temp_item.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
 
     def mouseReleaseEvent(self, event):
-        """Завершение перемещения объекта"""
-        if self.shape_mode is None:
-            self.selected_object = None  # ✅ Отпускаем объект после перемещения
+        """Завершаем рисование и добавляем объект в sceen"""
+        if not self.active_scene:
             return
 
         if self.shape_mode in ["circle", "square", "line"] and self.temp_item:
             drawable = DrawableObject(self.shape_mode, self.temp_item)
             self.temp_item.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
-            self.objects.append(drawable)
+
+            # ✅ Добавляем объект в sceen или sub_sceen
+            self.active_scene.objects.append(drawable)
             self.temp_item = None
+
         self.drawing = False
 
     def enable_selection(self):
