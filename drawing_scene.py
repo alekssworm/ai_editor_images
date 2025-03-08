@@ -142,8 +142,10 @@ class DrawingScene(QGraphicsScene):
             drawable = DrawableObject(self.shape_mode, self.temp_item)
             self.temp_item.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
 
-            # ✅ Добавляем объект в sceen или sub_sceen
+            # ✅ Добавляем объект в активную сцену и общий список
             self.active_scene.objects.append(drawable)
+            self.objects.append(drawable)
+
             self.temp_item = None
 
         self.drawing = False
