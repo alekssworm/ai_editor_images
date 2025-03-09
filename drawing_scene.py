@@ -1,3 +1,4 @@
+
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog
 from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction
 from PySide6.QtCore import Qt, QRectF
@@ -14,7 +15,7 @@ class DrawableObject:
         """Изменение пера (цвет, толщина и т.д.)"""
         self.pen = pen
         self.item.setPen(pen)
-
+        self.item.update()  # 🔥 Обновляем объект
     def move(self, dx, dy):
         """Перемещение объекта"""
         self.item.moveBy(dx, dy)
@@ -48,17 +49,29 @@ class DrawingScene(QGraphicsScene):
     def set_pen_width(self, width):
         """Изменяет толщину кисти"""
         self.pen_width = width
+        self.update_scene_objects()  # 🔥 Обновляем уже нарисованные объекты
 
     def set_pen_color(self, color):
         """Изменение цвета кисти"""
         self.pen_color = QColor(color.red(), color.green(), color.blue(), self.pen_color.alpha())
+        self.update_scene_objects()  # 🔥 Обновляем уже нарисованные объекты
 
     def set_pen_opacity(self, value):
         """Меняет прозрачность кисти (0-100 -> 0-255)"""
-        alpha = int((value / 100) * 255)  # ✅ Преобразуем 0-100 в 0-255
-        self.pen_color.setAlpha(alpha)  # ✅ Изменяем только прозрачность
+        alpha = int((value / 100) * 255)
+        self.pen_color.setAlpha(alpha)
+        self.update_scene_objects()  # 🔥 Обновляем уже нарисованные объекты
 
+    def update_scene_objects(self):
+        """Обновляет цвет и прозрачность всех объектов в текущем sceen или sub_sceen"""
+        if not self.active_scene:
+            return  # Если нет активной сцены, ничего не делаем
 
+        new_pen = QPen(self.pen_color, self.pen_width)  # ✅ Создаём новый `QPen`
+
+        for obj in self.active_scene.objects:
+            if isinstance(obj, DrawableObject):
+                obj.set_pen(new_pen)  # ✅ Применяем новый цвет и прозрачность
 
     def load_image(self, image_path):
         """Загружает изображение в сцену"""
@@ -114,7 +127,7 @@ class DrawingScene(QGraphicsScene):
                 radius = abs(event.scenePos().x() - self.start_point.x())
                 self.temp_item = self.addEllipse(self.start_point.x(), self.start_point.y(), radius, radius, pen)
 
-        
+
 
             elif self.shape_mode == "square":
                 if self.start_point is None:
@@ -201,7 +214,27 @@ class DrawingScene(QGraphicsScene):
                 obj.set_pen(pen)
 
     def choose_color(self):
-        """Выбирает цвет кисти и меняет цвет выделенной фигуры"""
+        """Выбор нового цвета кисти и обновление всех фигур в sceen/sub_sceen"""
         color = QColorDialog.getColor()
-        if color.isValid():
-            self.change_selected_color(color)
+        if color.isValid() and self.scene:
+            self.scene.set_pen_color(color)  # Меняем цвет кисти
+            self.scene.update_scene_objects()  # 🔥 Обновляем все фигуры в sceen или sub_sceen
+
+    def update_scene_objects(self):
+        """Обновляет цвет и прозрачность всех объектов в текущем sceen или sub_sceen"""
+        if not self.active_scene:
+            return  # Если нет активной сцены, ничего не делаем
+
+        for obj in self.active_scene.objects:
+            if isinstance(obj, DrawableObject):  # Убеждаемся, что объект рисуемый
+                pen = QPen(self.pen_color, obj.pen.width())  # Используем новый цвет и прозрачность
+                obj.set_pen(pen)
+
+    def change_pen_opacity(self, value):
+        """Меняет прозрачность кисти и обновляет все фигуры"""
+        if self.scene:
+            self.scene.set_pen_opacity(value)
+            self.scene.update_scene_objects()  # 🔥 Обновляем все фигуры в sceen или sub_sceen
+
+
+
