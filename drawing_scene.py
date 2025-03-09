@@ -1,6 +1,6 @@
 
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog
-from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction
+from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction, QPainter
 from PySide6.QtCore import Qt, QRectF
 
 
@@ -85,6 +85,38 @@ class DrawingScene(QGraphicsScene):
         self.addItem(self.image_item)
         self.image_item.setZValue(-1)
         self.image_rect = self.image_item.boundingRect()
+
+    def save_shapes_in_scene(self, sceen, save_folder):
+        """
+        Сохраняет части изображения, находящиеся внутри фигур в sceen и sub_sceen.
+        - sceen: объект сцены (sceen или sub_sceen)
+        - save_folder: папка для сохранения изображений
+        """
+        if not sceen or not hasattr(sceen, "objects"):
+            print("Ошибка: sceen не содержит объектов!")
+            return
+
+        # Создаём QPixmap для всей сцены
+        pixmap = QPixmap(self.sceneRect().size().toSize())  # Размер сцены
+        pixmap.fill(Qt.transparent)  # Фон прозрачный
+
+        # Рендерим сцену в QPixmap
+        painter = QPainter(pixmap)
+        self.render(painter, QRectF(pixmap.rect()), self.sceneRect())
+        painter.end()
+
+        # Проходим по всем фигурам в sceen
+        for idx, obj in enumerate(sceen.objects):
+            if isinstance(obj, DrawableObject):
+                rect = obj.item.sceneBoundingRect()  # Получаем область фигуры
+                cropped_pixmap = pixmap.copy(rect.toRect())  # Вырезаем область
+
+                save_path = f"{save_folder}/shape_{idx}.png"
+                if cropped_pixmap.save(save_path):
+                    print(f"Фигура сохранена: {save_path}")
+                else:
+                    print(f"Ошибка при сохранении: {save_path}")
+
 
     def mousePressEvent(self, event):
         """Начинаем рисование"""

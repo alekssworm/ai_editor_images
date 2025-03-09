@@ -1,6 +1,7 @@
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QFrame
-from PySide6.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QScrollArea, QSizePolicy, QPushButton, QGraphicsItem
+from PySide6.QtWidgets import QDockWidget, QWidget, QVBoxLayout, QScrollArea, QSizePolicy, QPushButton, QGraphicsItem, \
+    QFileDialog
 from PySide6.QtCore import Qt
 
 from drawing_scene import DrawableObject
@@ -46,6 +47,9 @@ class AiPanel(QDockWidget, Ui_DockWidget):
         new_sceen = QWidget(self)
         ui_sceen = Ui_Frame()
         ui_sceen.setupUi(new_sceen)
+
+        # ✅ Подключаем кнопку render
+        self.connect_render_button(ui_sceen, new_sceen)
 
         new_sceen.objects = []  # ✅ Добавляем список объектов
         self.sceens.append(new_sceen)
@@ -199,6 +203,31 @@ class AiPanel(QDockWidget, Ui_DockWidget):
             scroll_area.hide()
         else:
             scroll_area.show()
+
+    def connect_render_button(self, ui_sceen, sceen):
+        """Подключает кнопку render к сохранению фигур"""
+        if hasattr(ui_sceen, "render"):
+            ui_sceen.render.clicked.connect(lambda: self.save_scene_shapes(sceen))
+
+    def save_scene_shapes(self, sceen):
+        """Сохраняет все фигуры из sceen и sub_sceen"""
+        if not sceen:
+            print("Ошибка: sceen не найден!")
+            return
+
+        save_folder = QFileDialog.getExistingDirectory(None, "Выберите папку для сохранения")
+        if not save_folder:
+            print("Ошибка: Папка не выбрана!")
+            return
+
+        # ✅ Сохраняем все фигуры из sceen
+        self.parentWidget().graphicsView.scene().save_shapes_in_scene(sceen, save_folder)
+
+        # ✅ Сохраняем все фигуры из sub_sceen
+        for sub_sceen in sceen.objects:
+            if isinstance(sub_sceen, QWidget) and hasattr(sub_sceen, "objects"):
+                self.parentWidget().graphicsView.scene().save_shapes_in_scene(sub_sceen, save_folder)
+
 
 
 

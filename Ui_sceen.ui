@@ -299,7 +299,7 @@
           <string>add obj</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="pushButton_52">
+        <widget class="QPushButton" name="render">
          <property name="text">
           <string>render</string>
          </property>

@@ -149,9 +149,9 @@ class Ui_Frame(object):
         self.pushButton_48 = QPushButton(self.splitter_17)
         self.pushButton_48.setObjectName(u"pushButton_48")
         self.splitter_17.addWidget(self.pushButton_48)
-        self.pushButton_52 = QPushButton(self.splitter_17)
-        self.pushButton_52.setObjectName(u"pushButton_52")
-        self.splitter_17.addWidget(self.pushButton_52)
+        self.render = QPushButton(self.splitter_17)
+        self.render.setObjectName(u"render")
+        self.splitter_17.addWidget(self.render)
 
         self.gridLayout_6.addWidget(self.splitter_17, 7, 0, 1, 1)
 
@@ -193,6 +193,6 @@ class Ui_Frame(object):
         self.pushButton_50.setText("")
         self.trash.setText("")
         self.pushButton_48.setText(QCoreApplication.translate("Frame", u"add obj", None))
-        self.pushButton_52.setText(QCoreApplication.translate("Frame", u"render", None))
+        self.render.setText(QCoreApplication.translate("Frame", u"render", None))
     # retranslateUi
 
