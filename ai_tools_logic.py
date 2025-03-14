@@ -221,12 +221,15 @@ class AiPanel(QDockWidget, Ui_DockWidget):
             return
 
         # ✅ Сохраняем все фигуры из sceen
-        self.parentWidget().graphicsView.scene().save_shapes_in_scene(sceen, save_folder)
+        sceen_index = self.sceens.index(sceen)  # Получаем индекс сцены в списке
+        self.parentWidget().graphicsView.scene().save_shapes_in_scene(sceen, save_folder, sceen_index)
 
         # ✅ Сохраняем все фигуры из sub_sceen
         for sub_sceen in sceen.objects:
             if isinstance(sub_sceen, QWidget) and hasattr(sub_sceen, "objects"):
-                self.parentWidget().graphicsView.scene().save_shapes_in_scene(sub_sceen, save_folder)
+                sceen_index = self.sceens.index(sub_sceen)  # Получаем индекс сцены в списке
+                self.parentWidget().graphicsView.scene().save_shapes_in_scene(sub_sceen, save_folder, sceen_index)
+
 
 
 

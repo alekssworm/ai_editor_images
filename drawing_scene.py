@@ -1,5 +1,5 @@
 
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog
+from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog, QWidget
 from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction, QPainter
 from PySide6.QtCore import Qt, QRectF
 
@@ -86,37 +86,68 @@ class DrawingScene(QGraphicsScene):
         self.image_item.setZValue(-1)
         self.image_rect = self.image_item.boundingRect()
 
-    def save_shapes_in_scene(self, sceen, save_folder):
+    def save_shapes_in_scene(self, sceen, save_folder, sceen_index):
         """
-        Сохраняет части изображения, находящиеся внутри фигур в sceen и sub_sceen.
-        - sceen: объект сцены (sceen или sub_sceen)
-        - save_folder: папка для сохранения изображений
+        Сохраняет все выделенные области внутри sceen и sub_sceen.
+        - sceen: текущая сцена (sceen или sub_sceen).
+        - save_folder: путь к папке для сохранения.
+        - sceen_index: индекс сцены для именования файлов.
         """
         if not sceen or not hasattr(sceen, "objects"):
-            print("Ошибка: sceen не содержит объектов!")
+            print(f"Ошибка: sceen {sceen_index} не содержит объектов!")
             return
 
-        # Создаём QPixmap для всей сцены
+        # ✅ Создаём QPixmap для всей сцены
         pixmap = QPixmap(self.sceneRect().size().toSize())  # Размер сцены
         pixmap.fill(Qt.transparent)  # Фон прозрачный
 
-        # Рендерим сцену в QPixmap
+        # ✅ Временное поднятие всех объектов вперёд (чтобы избежать перекрытий)
+        for obj in sceen.objects:
+            if isinstance(obj, DrawableObject):
+                obj.item.setZValue(100)
+                if obj.shape == "circle":
+                    obj.item.setBrush(QColor(0, 255, 0, 150))  # Временная заливка для корректного рендеринга
+
+        # ✅ Рендерим сцену в QPixmap
         painter = QPainter(pixmap)
         self.render(painter, QRectF(pixmap.rect()), self.sceneRect())
         painter.end()
 
-        # Проходим по всем фигурам в sceen
-        for idx, obj in enumerate(sceen.objects):
+        # ✅ Восстанавливаем ZValue и убираем временную заливку
+        for obj in sceen.objects:
             if isinstance(obj, DrawableObject):
-                rect = obj.item.sceneBoundingRect()  # Получаем область фигуры
+                obj.item.setZValue(0)
+                if obj.shape == "circle":
+                    obj.item.setBrush(Qt.NoBrush)
+
+        objects_to_save = []
+
+        # ✅ Собираем все объекты из sceen и sub_sceen (рекурсивно)
+        def collect_objects(scene_obj):
+            if hasattr(scene_obj, "objects"):
+                for obj in scene_obj.objects:
+                    if isinstance(obj, DrawableObject):
+                        objects_to_save.append(obj)
+                    elif isinstance(obj, QWidget):  # sub_sceen — это тоже QWidget
+                        collect_objects(obj)  # Рекурсивный вызов
+
+        collect_objects(sceen)
+
+        # ✅ Сохраняем каждую фигуру
+        for idx, obj in enumerate(objects_to_save):
+            if isinstance(obj, DrawableObject):
+                rect = obj.item.sceneBoundingRect()  # ✅ Глобальные координаты объекта
+                rect = rect.intersected(self.sceneRect())  # ✅ Гарантируем, что объект в границах сцены
+                if rect.isEmpty():
+                    continue  # Пропускаем пустые или невидимые объекты
+
                 cropped_pixmap = pixmap.copy(rect.toRect())  # Вырезаем область
 
-                save_path = f"{save_folder}/shape_{idx}.png"
+                save_path = f"{save_folder}/sceen_{sceen_index}_shape_{idx}.png"
                 if cropped_pixmap.save(save_path):
                     print(f"Фигура сохранена: {save_path}")
                 else:
                     print(f"Ошибка при сохранении: {save_path}")
-
 
     def mousePressEvent(self, event):
         """Начинаем рисование"""
