@@ -1,6 +1,7 @@
 
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog, QWidget
-from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction, QPainter
+from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog, QWidget, \
+    QGraphicsPolygonItem, QGraphicsLineItem
+from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction, QPainter, QPolygonF
 from PySide6.QtCore import Qt, QRectF
 
 
@@ -37,6 +38,7 @@ class DrawingScene(QGraphicsScene):
         self.objects = []  # ✅ Список всех объектов на сцене
         self.active_scene = None  # ✅ Текущий sceen или sub_sceen
         self.selected_object = None
+        self.current_polygon = []  # 🔥 Хранит точки соединённой фигуры
 
     def set_active_scene(self, scene):
         """Устанавливает, в каком sceen идет рисование"""
@@ -150,19 +152,45 @@ class DrawingScene(QGraphicsScene):
                     print(f"Ошибка при сохранении: {save_path}")
 
     def mousePressEvent(self, event):
-        """Начинаем рисование"""
+        """Обрабатывает начало рисования"""
         if not self.active_scene:
-            return  # Если не выбран sceen или sub_sceen, не рисуем
+            return  # Если нет активной сцены, не рисуем
 
-        self.drawing = True
+        point = event.scenePos()
         pen = QPen(self.pen_color, self.pen_width)
-        self.start_point = event.scenePos()
 
-        if self.shape_mode == "free":
-            self.current_path = QPainterPath(event.scenePos())
-            self.current_item = self.addPath(self.current_path, pen)
-        elif self.shape_mode in ["circle", "square", "line"]:
-            self.temp_item = None  # Будет создан в mouseMoveEvent
+        if self.shape_mode == "line":
+            if not self.current_polygon:
+                # 🔥 Начинаем новый путь линий
+                self.current_polygon.append(point)
+            else:
+                last_point = self.current_polygon[-1]
+
+                # 🔥 Проверяем, замкнулась ли фигура
+                if len(self.current_polygon) > 2 and (point - self.current_polygon[0]).manhattanLength() < 10:
+                    self.current_polygon.append(self.current_polygon[0])  # Замыкаем фигуру
+                    self.create_polygon()
+                else:
+                    # 🔥 Добавляем новую линию
+                    line = QGraphicsLineItem(last_point.x(), last_point.y(), point.x(), point.y())
+                    line.setPen(pen)
+                    self.addItem(line)
+                    self.active_scene.objects.append(DrawableObject("line", line))
+                    self.current_polygon.append(point)  # Добавляем точку в список
+
+    def create_polygon(self):
+        """Создаёт полигон из соединённых линий"""
+        if len(self.current_polygon) < 3:
+            return  # 🔥 Минимум 3 точки для фигуры
+
+        pen = QPen(self.pen_color, self.pen_width)
+        polygon_item = QGraphicsPolygonItem(QPolygonF(self.current_polygon))
+        polygon_item.setPen(pen)
+        polygon_item.setBrush(QColor(self.pen_color.red(), self.pen_color.green(), self.pen_color.blue(), 100))
+
+        self.addItem(polygon_item)
+        self.active_scene.objects.append(DrawableObject("polygon", polygon_item))
+        self.current_polygon.clear()  # 🔥 Очищаем временные линии
 
     def mouseMoveEvent(self, event):
         """Обрабатывает перемещение выделенного объекта с более плавным управлением"""
