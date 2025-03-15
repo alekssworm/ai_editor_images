@@ -178,6 +178,18 @@ class DrawingScene(QGraphicsScene):
                     self.active_scene.objects.append(DrawableObject("line", line))
                     self.current_polygon.append(point)  # Добавляем точку в список
 
+        elif self.shape_mode in ["circle", "square"]:
+            self.start_point = point
+            self.drawing = True
+
+            # Имитация mouseMoveEvent, чтобы сразу отобразить фигуру
+            if self.shape_mode == "circle":
+                radius = 10  # Начальный радиус
+                self.temp_item = self.addEllipse(point.x(), point.y(), radius, radius, pen)
+            elif self.shape_mode == "square":
+                rect = QRectF(point.x(), point.y(), 10, 10)  # Начальный квадрат
+                self.temp_item = self.addRect(rect, pen)
+
     def create_polygon(self):
         """Создаёт полигон из соединённых линий"""
         if len(self.current_polygon) < 3:
@@ -232,10 +244,7 @@ class DrawingScene(QGraphicsScene):
                 rect = QRectF(x1, y1, x2 - x1, y2 - y1).normalized()  # ✅ Исправление!
                 self.temp_item = self.addRect(rect, pen)
 
-            elif self.shape_mode == "line":
-                self.temp_item = self.addLine(self.start_point.x(), self.start_point.y(), event.scenePos().x(),
-                                              event.scenePos().y(), pen)
-                self.temp_item.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
+
 
     def mouseReleaseEvent(self, event):
         """Завершаем рисование и добавляем объект в sceen"""
