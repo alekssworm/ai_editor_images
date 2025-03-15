@@ -1,8 +1,9 @@
+import os
 
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog, QWidget, \
     QGraphicsPolygonItem, QGraphicsLineItem
 from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction, QPainter, QPolygonF
-from PySide6.QtCore import Qt, QRectF
+from PySide6.QtCore import Qt, QRectF, QDateTime
 
 
 class DrawableObject:
@@ -88,68 +89,106 @@ class DrawingScene(QGraphicsScene):
         self.image_item.setZValue(-1)
         self.image_rect = self.image_item.boundingRect()
 
-    def save_shapes_in_scene(self, sceen, save_folder, sceen_index):
+    import os
+    from PySide6.QtGui import QPixmap, QPainter
+    from PySide6.QtCore import QRectF, QDateTime
+
+    import os
+    from PySide6.QtGui import QPixmap, QPainter
+    from PySide6.QtCore import QRectF, QDateTime
+
+    def save_shapes_in_scene(self, scene, base_folder, scene_index):
         """
-        Сохраняет все выделенные области внутри sceen и sub_sceen.
-        - sceen: текущая сцена (sceen или sub_sceen).
-        - save_folder: путь к папке для сохранения.
-        - sceen_index: индекс сцены для именования файлов.
+        Сохраняет законченные фигуры (circle, square, polygon) в главной сцене и под-сценах.
+        - scene: текущая главная сцена.
+        - base_folder: корневая папка для сохранения.
+        - scene_index: индекс сцены.
         """
-        if not sceen or not hasattr(sceen, "objects"):
-            print(f"Ошибка: sceen {sceen_index} не содержит объектов!")
+
+        if not scene or not hasattr(scene, "objects"):
+            print(f"Ошибка: scene {scene_index} не содержит объектов!")
             return
 
-        # ✅ Создаём QPixmap для всей сцены
-        pixmap = QPixmap(self.sceneRect().size().toSize())  # Размер сцены
-        pixmap.fill(Qt.transparent)  # Фон прозрачный
+        # ✅ Создаём корневую папку проекта, если её нет
+        timestamp = QDateTime.currentDateTime().toString("yyyyMMdd_HHmmss")
+        project_folder = os.path.join(base_folder, f"Project_{timestamp}")
+        os.makedirs(project_folder, exist_ok=True)
 
-        # ✅ Временное поднятие всех объектов вперёд (чтобы избежать перекрытий)
-        for obj in sceen.objects:
+        # ✅ Создаём папку для главной сцены
+        scene_folder = os.path.join(project_folder, f"scene_{scene_index}")
+        os.makedirs(scene_folder, exist_ok=True)
+
+        # ✅ Создаём QPixmap для рендеринга
+        pixmap = QPixmap(self.sceneRect().size().toSize())
+        pixmap.fill(Qt.transparent)
+
+        # ✅ Временное поднятие объектов вперёд
+        for obj in scene.objects:
             if isinstance(obj, DrawableObject):
                 obj.item.setZValue(100)
                 if obj.shape == "circle":
-                    obj.item.setBrush(QColor(0, 255, 0, 150))  # Временная заливка для корректного рендеринга
+                    obj.item.setBrush(QColor(0, 255, 0, 150))
 
-        # ✅ Рендерим сцену в QPixmap
+        # ✅ Рендер сцены в QPixmap
         painter = QPainter(pixmap)
         self.render(painter, QRectF(pixmap.rect()), self.sceneRect())
         painter.end()
 
-        # ✅ Восстанавливаем ZValue и убираем временную заливку
-        for obj in sceen.objects:
+        # ✅ Восстанавливаем ZValue
+        for obj in scene.objects:
             if isinstance(obj, DrawableObject):
                 obj.item.setZValue(0)
                 if obj.shape == "circle":
                     obj.item.setBrush(Qt.NoBrush)
 
-        objects_to_save = []
-
-        # ✅ Собираем все объекты из sceen и sub_sceen (рекурсивно)
+        # ✅ Собираем все объекты (и sub_sceen)
         def collect_objects(scene_obj):
+            objects_dict = {"scene": [], "sub_scenes": {}}
+
             if hasattr(scene_obj, "objects"):
                 for obj in scene_obj.objects:
-                    if isinstance(obj, DrawableObject):
-                        objects_to_save.append(obj)
-                    elif isinstance(obj, QWidget):  # sub_sceen — это тоже QWidget
-                        collect_objects(obj)  # Рекурсивный вызов
+                    if isinstance(obj, DrawableObject) and obj.shape in {"circle", "square", "polygon"}:
+                        objects_dict["scene"].append(obj)
+                    elif isinstance(obj, QWidget):  # sub_sceen
+                        sub_index = len(objects_dict["sub_scenes"]) + 1
+                        sub_folder = os.path.join(scene_folder, f"sub_sceen_{sub_index}")
+                        os.makedirs(sub_folder, exist_ok=True)
+                        objects_dict["sub_scenes"][sub_folder] = collect_objects(obj)["scene"]
 
-        collect_objects(sceen)
+            return objects_dict
 
-        # ✅ Сохраняем каждую фигуру
-        for idx, obj in enumerate(objects_to_save):
-            if isinstance(obj, DrawableObject):
-                rect = obj.item.sceneBoundingRect()  # ✅ Глобальные координаты объекта
-                rect = rect.intersected(self.sceneRect())  # ✅ Гарантируем, что объект в границах сцены
+        objects_data = collect_objects(scene)
+
+        # ✅ Сохраняем фигуры в `scene_X`
+        for idx, obj in enumerate(objects_data["scene"]):
+            rect = obj.item.sceneBoundingRect()
+            rect = rect.intersected(self.sceneRect())
+            if rect.isEmpty():
+                continue
+
+            cropped_pixmap = pixmap.copy(rect.toRect())
+            save_path = os.path.join(scene_folder, f"shape_{idx}.png")
+
+            if cropped_pixmap.save(save_path):
+                print(f"Фигура сохранена: {save_path}")
+            else:
+                print(f"Ошибка при сохранении: {save_path}")
+
+        # ✅ Сохраняем фигуры в `sub_sceen_X`
+        for sub_folder, sub_objects in objects_data["sub_scenes"].items():
+            for idx, obj in enumerate(sub_objects):
+                rect = obj.item.sceneBoundingRect()
+                rect = rect.intersected(self.sceneRect())
                 if rect.isEmpty():
-                    continue  # Пропускаем пустые или невидимые объекты
+                    continue
 
-                cropped_pixmap = pixmap.copy(rect.toRect())  # Вырезаем область
+                cropped_pixmap = pixmap.copy(rect.toRect())
+                save_path = os.path.join(sub_folder, f"shape_{idx}.png")
 
-                save_path = f"{save_folder}/sceen_{sceen_index}_shape_{idx}.png"
                 if cropped_pixmap.save(save_path):
-                    print(f"Фигура сохранена: {save_path}")
+                    print(f"Фигура сохранена в под-сцене: {save_path}")
                 else:
-                    print(f"Ошибка при сохранении: {save_path}")
+                    print(f"Ошибка при сохранении в под-сцене: {save_path}")
 
     def mousePressEvent(self, event):
         """Обрабатывает начало рисования"""
