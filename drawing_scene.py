@@ -93,24 +93,30 @@ class DrawingScene(QGraphicsScene):
     from PySide6.QtGui import QPixmap, QPainter
     from PySide6.QtCore import QRectF, QDateTime
 
+    import os
+    from PySide6.QtGui import QPixmap, QPainter, QColor
+    from PySide6.QtCore import QRectF, QDateTime
 
-
-    def save_shapes_in_scene(self, scene, base_folder, scene_index):
+    def save_shapes_in_scene(self, scene, base_folder, scene_index, project_folder=None):
         """
         Сохраняет `scene`, обрезая её по границам нарисованных фигур, и `sub_sceen`, вырезая `sub_sceen` области.
         - scene: текущая главная сцена.
         - base_folder: корневая папка для сохранения.
         - scene_index: индекс сцены.
+        - project_folder: путь к общей папке проекта (чтобы `scene` и `sub_sceen` не создавали разные папки).
         """
 
         if not scene or not hasattr(scene, "objects"):
             print(f"Ошибка: scene {scene_index} не содержит объектов!")
             return
 
-        # ✅ Создаём корневую папку проекта, если её нет
-        timestamp = QDateTime.currentDateTime().toString("yyyyMMdd_HHmmss")
-        project_folder = os.path.join(base_folder, f"Project_{timestamp}")
-        os.makedirs(project_folder, exist_ok=True)
+        # ✅ Если `project_folder` не передан, создаём новую папку проекта
+        if project_folder is None:
+            timestamp = QDateTime.currentDateTime().toString("yyyyMMdd_HHmmss")
+            project_folder = os.path.join(base_folder, f"Project_{timestamp}")
+            os.makedirs(project_folder, exist_ok=True)
+        else:
+            os.makedirs(project_folder, exist_ok=True)  # Убеждаемся, что папка уже существует
 
         # ✅ Создаём папку для главной сцены
         scene_folder = os.path.join(project_folder, f"scene_{scene_index}")
@@ -191,7 +197,7 @@ class DrawingScene(QGraphicsScene):
         else:
             print(f"Ошибка при сохранении сцены: {scene_save_path}")
 
-        # ✅ Сохраняем `sub_sceen_X`
+        # ✅ Сохраняем `sub_sceen_X`, передавая общий `project_folder`
         for sub_folder, sub_objects in objects_data["sub_scenes"].items():
             for idx, obj in enumerate(sub_objects):
                 rect = obj.item.sceneBoundingRect()
@@ -208,47 +214,7 @@ class DrawingScene(QGraphicsScene):
                 else:
                     print(f"Ошибка при сохранении в под-сцене: {save_path}")
 
-        # ✅ Фильтруем объекты, которые не попадают в sub_sceen
-        def is_excluded(rect):
-            """Проверяет, пересекается ли объект с исключаемыми областями (sub_sceen)"""
-            for exclusion in objects_data["excluded_areas"]:
-                if exclusion.intersects(rect):
-                    return True
-            return False
 
-        # ✅ Сохраняем фигуры в `scene_X`, исключая вложенные sub_sceen
-        for idx, obj in enumerate(objects_data["scene"]):
-            rect = obj.item.sceneBoundingRect()
-            rect = rect.intersected(self.sceneRect())
-
-            if rect.isEmpty() or is_excluded(rect):  # 🔥 Исключаем фигуры из sub_sceen
-                continue
-
-            cropped_pixmap = pixmap_scene.copy(rect.toRect())  # 🔥 Исправлено
-
-            save_path = os.path.join(scene_folder, f"shape_{idx}.png")
-
-            if cropped_pixmap.save(save_path):
-                print(f"Фигура сохранена: {save_path}")
-            else:
-                print(f"Ошибка при сохранении: {save_path}")
-
-        # ✅ Сохраняем фигуры в `sub_sceen_X`
-        for sub_folder, sub_objects in objects_data["sub_scenes"].items():
-            for idx, obj in enumerate(sub_objects):
-                rect = obj.item.sceneBoundingRect()
-                rect = rect.intersected(self.sceneRect())
-                if rect.isEmpty():
-                    continue
-
-                cropped_pixmap = pixmap_scene.copy(rect.toRect())  # 🔥 Исправлено
-
-                save_path = os.path.join(sub_folder, f"shape_{idx}.png")
-
-                if cropped_pixmap.save(save_path):
-                    print(f"Фигура сохранена в под-сцене: {save_path}")
-                else:
-                    print(f"Ошибка при сохранении в под-сцене: {save_path}")
 
 
     def mousePressEvent(self, event):
