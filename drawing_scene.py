@@ -89,14 +89,6 @@ class DrawingScene(QGraphicsScene):
         self.image_item.setZValue(-1)
         self.image_rect = self.image_item.boundingRect()
 
-    import os
-    from PySide6.QtGui import QPixmap, QPainter
-    from PySide6.QtCore import QRectF, QDateTime
-
-    import os
-    from PySide6.QtGui import QPixmap, QPainter, QColor
-    from PySide6.QtCore import QRectF, QDateTime
-
     def save_shapes_in_scene(self, scene, base_folder, scene_index, project_folder=None):
         """
         Сохраняет `scene`, обрезая её по границам нарисованных фигур, и `sub_sceen`, вырезая `sub_sceen` области.
@@ -110,19 +102,17 @@ class DrawingScene(QGraphicsScene):
             print(f"Ошибка: scene {scene_index} не содержит объектов!")
             return
 
-        # ✅ Если `project_folder` не передан, создаём новую папку проекта
+        # ✅ Создаём папку проекта только один раз
         if project_folder is None:
             timestamp = QDateTime.currentDateTime().toString("yyyyMMdd_HHmmss")
             project_folder = os.path.join(base_folder, f"Project_{timestamp}")
             os.makedirs(project_folder, exist_ok=True)
-        else:
-            os.makedirs(project_folder, exist_ok=True)  # Убеждаемся, что папка уже существует
 
         # ✅ Создаём папку для главной сцены
         scene_folder = os.path.join(project_folder, f"scene_{scene_index}")
         os.makedirs(scene_folder, exist_ok=True)
 
-        # ✅ Собираем все объекты сцены и `sub_sceen`
+        # ✅ Функция для сбора объектов сцены и `sub_sceen`
         def collect_objects(scene_obj):
             objects_dict = {"scene": [], "sub_scenes": {}, "excluded_areas": [], "bounding_rects": []}
 
@@ -131,12 +121,12 @@ class DrawingScene(QGraphicsScene):
                     if isinstance(obj, DrawableObject) and obj.shape in {"circle", "square", "polygon"}:
                         objects_dict["scene"].append(obj)
                         objects_dict["bounding_rects"].append(obj.item.sceneBoundingRect())
-                    elif isinstance(obj, QWidget):  # sub_sceen
+                    elif isinstance(obj, QWidget):  # Это sub_sceen
                         sub_index = len(objects_dict["sub_scenes"]) + 1
                         sub_folder = os.path.join(scene_folder, f"sub_sceen_{sub_index}")
                         os.makedirs(sub_folder, exist_ok=True)
 
-                        # 🔥 Собираем объекты `sub_sceen`
+                        # 🔥 ВАЖНО: передаём `project_folder`, чтобы не создавать новую папку
                         sub_data = collect_objects(obj)
                         objects_dict["sub_scenes"][sub_folder] = sub_data["scene"]
                         objects_dict["excluded_areas"].extend(
@@ -157,7 +147,7 @@ class DrawingScene(QGraphicsScene):
             print("Ошибка: Нет фигур в сцене для сохранения!")
             return
 
-        # ✅ Создаём `QPixmap` для рендеринга `scene`
+        # ✅ Создаём QPixmap для рендеринга `scene`
         pixmap_scene = QPixmap(scene_bbox.size().toSize())
         pixmap_scene.fill(Qt.transparent)
 
@@ -213,9 +203,6 @@ class DrawingScene(QGraphicsScene):
                     print(f"Фигура сохранена в под-сцене: {save_path}")
                 else:
                     print(f"Ошибка при сохранении в под-сцене: {save_path}")
-
-
-
 
     def mousePressEvent(self, event):
         """Обрабатывает начало рисования"""
