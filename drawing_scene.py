@@ -2,7 +2,7 @@ import os
 
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog, QWidget, \
     QGraphicsPolygonItem, QGraphicsLineItem
-from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction, QPainter, QPolygonF
+from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction, QPainter, QPolygonF, QImage, QBitmap
 from PySide6.QtCore import Qt, QRectF, QDateTime
 
 
@@ -114,13 +114,13 @@ class DrawingScene(QGraphicsScene):
 
         # ✅ Функция для сбора объектов сцены и `sub_sceen`
         def collect_objects(scene_obj):
-            objects_dict = {"scene": [], "sub_scenes": {}, "excluded_areas": [], "bounding_rects": []}
+            objects_dict = {"scene": [], "sub_scenes": {}, "excluded_areas": [], "bounding_paths": []}
 
             if hasattr(scene_obj, "objects"):
                 for obj in scene_obj.objects:
                     if isinstance(obj, DrawableObject) and obj.shape in {"circle", "square", "polygon"}:
                         objects_dict["scene"].append(obj)
-                        objects_dict["bounding_rects"].append(obj.item.sceneBoundingRect())
+                        objects_dict["bounding_paths"].append(obj.item.shape())  # Используем точную форму
                     elif isinstance(obj, QWidget):  # Это sub_sceen
                         sub_index = len(objects_dict["sub_scenes"]) + 1
                         sub_folder = os.path.join(scene_folder, f"sub_sceen_{sub_index}")
@@ -130,60 +130,69 @@ class DrawingScene(QGraphicsScene):
                         sub_data = collect_objects(obj)
                         objects_dict["sub_scenes"][sub_folder] = sub_data["scene"]
                         objects_dict["excluded_areas"].extend(
-                            [obj.item.sceneBoundingRect() for obj in sub_data["scene"]])
+                            [obj.item.shape() for obj in sub_data["scene"]]
+                        )
 
             return objects_dict
 
         objects_data = collect_objects(scene)
 
         # ✅ Вычисляем bounding box всех фигур
-        if objects_data["bounding_rects"]:
-            min_x = min(rect.left() for rect in objects_data["bounding_rects"])
-            min_y = min(rect.top() for rect in objects_data["bounding_rects"])
-            max_x = max(rect.right() for rect in objects_data["bounding_rects"])
-            max_y = max(rect.bottom() for rect in objects_data["bounding_rects"])
-            scene_bbox = QRectF(min_x, min_y, max_x - min_x, max_y - min_y)
+        if objects_data["bounding_paths"]:
+            path = QPainterPath()
+            for shape in objects_data["bounding_paths"]:
+                path.addPath(shape)
+
+            scene_bbox = path.boundingRect()
         else:
             print("Ошибка: Нет фигур в сцене для сохранения!")
             return
 
-        # ✅ Создаём QPixmap для рендеринга `scene`
-        pixmap_scene = QPixmap(scene_bbox.size().toSize())
-        pixmap_scene.fill(Qt.transparent)
+        # ✅ Создаём QImage вместо QPixmap для работы с альфа-каналом
+        image_size = scene_bbox.size().toSize()
+        image = QImage(image_size, QImage.Format_ARGB32)
+        image.fill(Qt.transparent)
 
-        # ✅ Рендерим только область фигур
-        painter_scene = QPainter(pixmap_scene)
-        self.render(painter_scene, QRectF(pixmap_scene.rect()), scene_bbox)
+        # ✅ Рендерим всю `scene`
+        painter_scene = QPainter(image)
+        painter_scene.setRenderHint(QPainter.Antialiasing)
+        self.render(painter_scene, QRectF(image.rect()), scene_bbox)
         painter_scene.end()
 
-        # ✅ Создаём маску `sub_sceen`
-        mask_pixmap = QPixmap(scene_bbox.size().toSize())
-        mask_pixmap.fill(Qt.transparent)
+        # ✅ Создаём маску `sub_sceen`, чтобы удалить их из `scene.png`
+        mask_image = QImage(image_size, QImage.Format_Alpha8)
+        mask_image.fill(Qt.transparent)
 
-        painter_mask = QPainter(mask_pixmap)
-        painter_mask.setBrush(QColor(0, 0, 0, 255))  # Чёрный цвет для маскировки
-        painter_mask.setPen(QColor(0, 0, 0, 255))
+        painter_mask = QPainter(mask_image)
+        painter_mask.setBrush(Qt.white)  # По умолчанию вся сцена белая (сохранится)
+        painter_mask.setPen(Qt.white)
 
         for exclusion in objects_data["excluded_areas"]:
-            exclusion_mapped = exclusion.translated(-scene_bbox.topLeft())  # Перенос координат
-            painter_mask.drawRect(exclusion_mapped)
+            painter_mask.setBrush(Qt.black)  # Черный цвет - это прозрачность
+            painter_mask.drawPath(exclusion.translated(-scene_bbox.topLeft()))
 
         painter_mask.end()
 
-        # ✅ Применяем маску к `scene`
-        final_scene = QPixmap(pixmap_scene.size())
-        final_scene.fill(Qt.transparent)
+        # ✅ Применяем маску к `scene`, удаляя `sub_sceen`
+        final_image = QImage(image_size, QImage.Format_ARGB32)
+        final_image.fill(Qt.transparent)
 
-        painter_final = QPainter(final_scene)
-        painter_final.drawPixmap(0, 0, pixmap_scene)  # Основное изображение
-        painter_final.setCompositionMode(QPainter.CompositionMode_DestinationOut)  # Вырезаем `sub_sceen`
-        painter_final.drawPixmap(0, 0, mask_pixmap)
+        painter_final = QPainter(final_image)
+        painter_final.setRenderHint(QPainter.Antialiasing)
+
+        # ✅ Рисуем исходную сцену
+        painter_final.drawImage(0, 0, image)
+
+        # ✅ Применяем маску, делая `sub_sceen` прозрачными
+        painter_final.setCompositionMode(QPainter.CompositionMode_DestinationOut)
+        painter_final.drawImage(0, 0, mask_image)
+
         painter_final.end()
 
-        # ✅ Сохраняем `scene` с обрезанными границами
+        # ✅ Сохраняем `scene` с вырезанными `sub_sceen`
         scene_save_path = os.path.join(scene_folder, "scene.png")
-        if final_scene.save(scene_save_path):
-            print(f"Сцена сохранена: {scene_save_path}")
+        if final_image.save(scene_save_path):
+            print(f"Сцена сохранена без sub_sceen: {scene_save_path}")
         else:
             print(f"Ошибка при сохранении сцены: {scene_save_path}")
 
@@ -196,10 +205,10 @@ class DrawingScene(QGraphicsScene):
                 if rect.isEmpty():
                     continue
 
-                cropped_pixmap = pixmap_scene.copy(rect.translated(-scene_bbox.topLeft()).toRect())
+                cropped_image = image.copy(rect.translated(-scene_bbox.topLeft()).toRect())
                 save_path = os.path.join(sub_folder, f"shape_{idx}.png")
 
-                if cropped_pixmap.save(save_path):
+                if cropped_image.save(save_path):
                     print(f"Фигура сохранена в под-сцене: {save_path}")
                 else:
                     print(f"Ошибка при сохранении в под-сцене: {save_path}")
