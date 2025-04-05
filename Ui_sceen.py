@@ -128,13 +128,15 @@ class Ui_Frame(object):
         self.pushButton_50.setIcon(icon2)
         self.pushButton_50.setIconSize(QSize(24, 24))
         self.splitter_10.addWidget(self.pushButton_50)
-        self.pushButton_51 = QPushButton(self.splitter_10)
-        self.pushButton_51.setObjectName(u"pushButton_51")
-        sizePolicy.setHeightForWidth(self.pushButton_51.sizePolicy().hasHeightForWidth())
-        self.pushButton_51.setSizePolicy(sizePolicy)
-        self.pushButton_51.setIcon(icon3)
-        self.pushButton_51.setIconSize(QSize(24, 24))
-        self.splitter_10.addWidget(self.pushButton_51)
+        self.trash = QPushButton(self.splitter_10)
+        self.trash.setObjectName(u"trash")
+        sizePolicy.setHeightForWidth(self.trash.sizePolicy().hasHeightForWidth())
+        self.trash.setSizePolicy(sizePolicy)
+        icon6 = QIcon()
+        icon6.addFile(u"icons/trash.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.trash.setIcon(icon6)
+        self.trash.setIconSize(QSize(24, 24))
+        self.splitter_10.addWidget(self.trash)
 
         self.gridLayout_6.addWidget(self.splitter_10, 0, 0, 1, 1)
 
@@ -147,9 +149,9 @@ class Ui_Frame(object):
         self.pushButton_48 = QPushButton(self.splitter_17)
         self.pushButton_48.setObjectName(u"pushButton_48")
         self.splitter_17.addWidget(self.pushButton_48)
-        self.pushButton_52 = QPushButton(self.splitter_17)
-        self.pushButton_52.setObjectName(u"pushButton_52")
-        self.splitter_17.addWidget(self.pushButton_52)
+        self.render = QPushButton(self.splitter_17)
+        self.render.setObjectName(u"render")
+        self.splitter_17.addWidget(self.render)
 
         self.gridLayout_6.addWidget(self.splitter_17, 7, 0, 1, 1)
 
@@ -189,8 +191,8 @@ class Ui_Frame(object):
 
         self.pushButton_49.setText("")
         self.pushButton_50.setText("")
-        self.pushButton_51.setText("")
+        self.trash.setText("")
         self.pushButton_48.setText(QCoreApplication.translate("Frame", u"add obj", None))
-        self.pushButton_52.setText(QCoreApplication.translate("Frame", u"render", None))
+        self.render.setText(QCoreApplication.translate("Frame", u"render", None))
     # retranslateUi
 

@@ -1,6 +1,9 @@
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog
-from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction
-from PySide6.QtCore import Qt, QRectF
+import os
+
+from PySide6.QtWidgets import QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem, QMenu, QColorDialog, QWidget, \
+    QGraphicsPolygonItem, QGraphicsLineItem
+from PySide6.QtGui import QPixmap, QPen, QColor, QPainterPath, QAction, QPainter, QPolygonF
+from PySide6.QtCore import Qt, QRectF, QDateTime
 
 
 class DrawableObject:
@@ -14,7 +17,7 @@ class DrawableObject:
         """Изменение пера (цвет, толщина и т.д.)"""
         self.pen = pen
         self.item.setPen(pen)
-
+        self.item.update()  # 🔥 Обновляем объект
     def move(self, dx, dy):
         """Перемещение объекта"""
         self.item.moveBy(dx, dy)
@@ -34,9 +37,13 @@ class DrawingScene(QGraphicsScene):
         self.drawing = False
         self.temp_item = None
         self.objects = []  # ✅ Список всех объектов на сцене
+        self.active_scene = None  # ✅ Текущий sceen или sub_sceen
         self.selected_object = None
+        self.current_polygon = []  # 🔥 Хранит точки соединённой фигуры
 
-
+    def set_active_scene(self, scene):
+        """Устанавливает, в каком sceen идет рисование"""
+        self.active_scene = scene
 
     def set_drawing_mode(self, mode):
         """Устанавливает режим рисования"""
@@ -45,17 +52,29 @@ class DrawingScene(QGraphicsScene):
     def set_pen_width(self, width):
         """Изменяет толщину кисти"""
         self.pen_width = width
+        self.update_scene_objects()  # 🔥 Обновляем уже нарисованные объекты
 
     def set_pen_color(self, color):
         """Изменение цвета кисти"""
         self.pen_color = QColor(color.red(), color.green(), color.blue(), self.pen_color.alpha())
+        self.update_scene_objects()  # 🔥 Обновляем уже нарисованные объекты
 
     def set_pen_opacity(self, value):
         """Меняет прозрачность кисти (0-100 -> 0-255)"""
-        alpha = int((value / 100) * 255)  # ✅ Преобразуем 0-100 в 0-255
-        self.pen_color.setAlpha(alpha)  # ✅ Изменяем только прозрачность
+        alpha = int((value / 100) * 255)
+        self.pen_color.setAlpha(alpha)
+        self.update_scene_objects()  # 🔥 Обновляем уже нарисованные объекты
 
+    def update_scene_objects(self):
+        """Обновляет цвет и прозрачность всех объектов в текущем sceen или sub_sceen"""
+        if not self.active_scene:
+            return  # Если нет активной сцены, ничего не делаем
 
+        new_pen = QPen(self.pen_color, self.pen_width)  # ✅ Создаём новый `QPen`
+
+        for obj in self.active_scene.objects:
+            if isinstance(obj, DrawableObject):
+                obj.set_pen(new_pen)  # ✅ Применяем новый цвет и прозрачность
 
     def load_image(self, image_path):
         """Загружает изображение в сцену"""
@@ -70,28 +89,182 @@ class DrawingScene(QGraphicsScene):
         self.image_item.setZValue(-1)
         self.image_rect = self.image_item.boundingRect()
 
-    def mousePressEvent(self, event):
-        """Обрабатывает нажатие мыши, чтобы перемещать объекты плавно"""
-        item = self.itemAt(event.scenePos(), self.views()[0].transform())
+    def save_shapes_in_scene(self, scene, base_folder, scene_index, project_folder=None):
+        """
+        Сохраняет `scene`, обрезая её по границам нарисованных фигур, и `sub_sceen`, вырезая `sub_sceen` области.
+        - scene: текущая главная сцена.
+        - base_folder: корневая папка для сохранения.
+        - scene_index: индекс сцены.
+        - project_folder: путь к общей папке проекта (чтобы `scene` и `sub_sceen` не создавали разные папки).
+        """
 
-        if self.shape_mode is None:  # ✅ Если включён режим "Мышь"
-            if item and item.isSelected() and item != self.image_item:
-                self.start_point = event.scenePos()  # ✅ Запоминаем начальную точку перемещения
-                self.selected_object = item  # ✅ Запоминаем объект, который двигаем
-            else:
-                self.clearSelection()  # ✅ Снимаем выделение со всех объектов
-                if item and item != self.image_item:
-                    item.setSelected(True)  # ✅ Выделяем объект
+        if not scene or not hasattr(scene, "objects"):
+            print(f"Ошибка: scene {scene_index} не содержит объектов!")
             return
 
-        # Обычный режим рисования
-        self.drawing = True
+        # ✅ Создаём папку проекта только один раз
+        if project_folder is None:
+            timestamp = QDateTime.currentDateTime().toString("yyyyMMdd_HHmmss")
+            project_folder = os.path.join(base_folder, f"Project_{timestamp}")
+            os.makedirs(project_folder, exist_ok=True)
+
+        # ✅ Создаём папку для главной сцены
+        scene_folder = os.path.join(project_folder, f"scene_{scene_index}")
+        os.makedirs(scene_folder, exist_ok=True)
+
+        # ✅ Функция для сбора объектов сцены и `sub_sceen`
+        def collect_objects(scene_obj):
+            objects_dict = {"scene": [], "sub_scenes": {}, "excluded_areas": [], "bounding_paths": []}
+
+            if hasattr(scene_obj, "objects"):
+                for obj in scene_obj.objects:
+                    if isinstance(obj, DrawableObject) and obj.shape in {"circle", "square", "polygon"}:
+                        objects_dict["scene"].append(obj)
+                        objects_dict["bounding_paths"].append(obj.item.shape())  # Используем точную форму
+                    elif isinstance(obj, QWidget):  # Это sub_sceen
+                        sub_index = len(objects_dict["sub_scenes"]) + 1
+                        sub_folder = os.path.join(scene_folder, f"sub_sceen_{sub_index}")
+                        os.makedirs(sub_folder, exist_ok=True)
+
+                        # 🔥 ВАЖНО: передаём `project_folder`, чтобы не создавать новую папку
+                        sub_data = collect_objects(obj)
+                        objects_dict["sub_scenes"][sub_folder] = sub_data["scene"]
+                        objects_dict["excluded_areas"].extend(
+                            [obj.item.shape() for obj in sub_data["scene"]]
+                        )
+
+            return objects_dict
+
+        objects_data = collect_objects(scene)
+
+        # ✅ Вычисляем bounding box всех фигур
+        if objects_data["bounding_paths"]:
+            path = QPainterPath()
+            for shape in objects_data["bounding_paths"]:
+                path.addPath(shape)
+
+            scene_bbox = path.boundingRect()
+        else:
+            print("Ошибка: Нет фигур в сцене для сохранения!")
+            return
+
+        # ✅ Создаём QImage вместо QPixmap для работы с альфа-каналом
+        image_size = scene_bbox.size().toSize()
+        image = QImage(image_size, QImage.Format_ARGB32)
+        image.fill(Qt.transparent)
+
+        # ✅ Рендерим всю `scene`
+        painter_scene = QPainter(image)
+        painter_scene.setRenderHint(QPainter.Antialiasing)
+        self.render(painter_scene, QRectF(image.rect()), scene_bbox)
+        painter_scene.end()
+
+        # ✅ Создаём маску `sub_sceen`, чтобы удалить их из `scene.png`
+        mask_image = QImage(image_size, QImage.Format_Alpha8)
+        mask_image.fill(Qt.transparent)
+
+        painter_mask = QPainter(mask_image)
+        painter_mask.setBrush(Qt.white)  # По умолчанию вся сцена белая (сохранится)
+        painter_mask.setPen(Qt.white)
+
+        for exclusion in objects_data["excluded_areas"]:
+            painter_mask.setBrush(Qt.black)  # Черный цвет - это прозрачность
+            painter_mask.drawPath(exclusion.translated(-scene_bbox.topLeft()))
+
+        painter_mask.end()
+
+        # ✅ Применяем маску к `scene`, удаляя `sub_sceen`
+        final_image = QImage(image_size, QImage.Format_ARGB32)
+        final_image.fill(Qt.transparent)
+
+        painter_final = QPainter(final_image)
+        painter_final.setRenderHint(QPainter.Antialiasing)
+
+        # ✅ Рисуем исходную сцену
+        painter_final.drawImage(0, 0, image)
+
+        # ✅ Применяем маску, делая `sub_sceen` прозрачными
+        painter_final.setCompositionMode(QPainter.CompositionMode_DestinationOut)
+        painter_final.drawImage(0, 0, mask_image)
+
+        painter_final.end()
+
+        # ✅ Сохраняем `scene` с вырезанными `sub_sceen`
+        scene_save_path = os.path.join(scene_folder, "scene.png")
+        if final_image.save(scene_save_path):
+            print(f"Сцена сохранена без sub_sceen: {scene_save_path}")
+        else:
+            print(f"Ошибка при сохранении сцены: {scene_save_path}")
+
+        # ✅ Сохраняем `sub_sceen_X`, передавая общий `project_folder`
+        for sub_folder, sub_objects in objects_data["sub_scenes"].items():
+            for idx, obj in enumerate(sub_objects):
+                rect = obj.item.sceneBoundingRect()
+                rect = rect.intersected(scene_bbox)
+
+                if rect.isEmpty():
+                    continue
+
+                cropped_image = image.copy(rect.translated(-scene_bbox.topLeft()).toRect())
+                save_path = os.path.join(sub_folder, f"shape_{idx}.png")
+
+                if cropped_image.save(save_path):
+                    print(f"Фигура сохранена в под-сцене: {save_path}")
+                else:
+                    print(f"Ошибка при сохранении в под-сцене: {save_path}")
+
+    def mousePressEvent(self, event):
+        """Обрабатывает начало рисования"""
+        if not self.active_scene:
+            return  # Если нет активной сцены, не рисуем
+
+        point = event.scenePos()
         pen = QPen(self.pen_color, self.pen_width)
-        if self.shape_mode == "free":
-            self.current_path = QPainterPath(event.scenePos())
-            self.current_item = self.addPath(self.current_path, pen)
-        elif self.shape_mode in ["circle", "square", "line"]:
-            self.start_point = event.scenePos()
+
+        if self.shape_mode == "line":
+            if not self.current_polygon:
+                # 🔥 Начинаем новый путь линий
+                self.current_polygon.append(point)
+            else:
+                last_point = self.current_polygon[-1]
+
+                # 🔥 Проверяем, замкнулась ли фигура
+                if len(self.current_polygon) > 2 and (point - self.current_polygon[0]).manhattanLength() < 10:
+                    self.current_polygon.append(self.current_polygon[0])  # Замыкаем фигуру
+                    self.create_polygon()
+                else:
+                    # 🔥 Добавляем новую линию
+                    line = QGraphicsLineItem(last_point.x(), last_point.y(), point.x(), point.y())
+                    line.setPen(pen)
+                    self.addItem(line)
+                    self.active_scene.objects.append(DrawableObject("line", line))
+                    self.current_polygon.append(point)  # Добавляем точку в список
+
+        elif self.shape_mode in ["circle", "square"]:
+            self.start_point = point
+            self.drawing = True
+
+            # Имитация mouseMoveEvent, чтобы сразу отобразить фигуру
+            if self.shape_mode == "circle":
+                radius = 10  # Начальный радиус
+                self.temp_item = self.addEllipse(point.x(), point.y(), radius, radius, pen)
+            elif self.shape_mode == "square":
+                rect = QRectF(point.x(), point.y(), 10, 10)  # Начальный квадрат
+                self.temp_item = self.addRect(rect, pen)
+
+    def create_polygon(self):
+        """Создаёт полигон из соединённых линий"""
+        if len(self.current_polygon) < 3:
+            return  # 🔥 Минимум 3 точки для фигуры
+
+        pen = QPen(self.pen_color, self.pen_width)
+        polygon_item = QGraphicsPolygonItem(QPolygonF(self.current_polygon))
+        polygon_item.setPen(pen)
+        polygon_item.setBrush(QColor(self.pen_color.red(), self.pen_color.green(), self.pen_color.blue(), 100))
+
+        self.addItem(polygon_item)
+        self.active_scene.objects.append(DrawableObject("polygon", polygon_item))
+        self.current_polygon.clear()  # 🔥 Очищаем временные линии
 
     def mouseMoveEvent(self, event):
         """Обрабатывает перемещение выделенного объекта с более плавным управлением"""
@@ -119,7 +292,7 @@ class DrawingScene(QGraphicsScene):
                 radius = abs(event.scenePos().x() - self.start_point.x())
                 self.temp_item = self.addEllipse(self.start_point.x(), self.start_point.y(), radius, radius, pen)
 
-        
+
 
             elif self.shape_mode == "square":
                 if self.start_point is None:
@@ -133,22 +306,23 @@ class DrawingScene(QGraphicsScene):
                 rect = QRectF(x1, y1, x2 - x1, y2 - y1).normalized()  # ✅ Исправление!
                 self.temp_item = self.addRect(rect, pen)
 
-            elif self.shape_mode == "line":
-                self.temp_item = self.addLine(self.start_point.x(), self.start_point.y(), event.scenePos().x(),
-                                              event.scenePos().y(), pen)
-                self.temp_item.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
+
 
     def mouseReleaseEvent(self, event):
-        """Завершение перемещения объекта"""
-        if self.shape_mode is None:
-            self.selected_object = None  # ✅ Отпускаем объект после перемещения
+        """Завершаем рисование и добавляем объект в sceen"""
+        if not self.active_scene:
             return
 
         if self.shape_mode in ["circle", "square", "line"] and self.temp_item:
             drawable = DrawableObject(self.shape_mode, self.temp_item)
             self.temp_item.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
+
+            # ✅ Добавляем объект в активную сцену и общий список
+            self.active_scene.objects.append(drawable)
             self.objects.append(drawable)
+
             self.temp_item = None
+
         self.drawing = False
 
     def enable_selection(self):
@@ -202,7 +376,27 @@ class DrawingScene(QGraphicsScene):
                 obj.set_pen(pen)
 
     def choose_color(self):
-        """Выбирает цвет кисти и меняет цвет выделенной фигуры"""
+        """Выбор нового цвета кисти и обновление всех фигур в sceen/sub_sceen"""
         color = QColorDialog.getColor()
-        if color.isValid():
-            self.change_selected_color(color)
+        if color.isValid() and self.scene:
+            self.scene.set_pen_color(color)  # Меняем цвет кисти
+            self.scene.update_scene_objects()  # 🔥 Обновляем все фигуры в sceen или sub_sceen
+
+    def update_scene_objects(self):
+        """Обновляет цвет и прозрачность всех объектов в текущем sceen или sub_sceen"""
+        if not self.active_scene:
+            return  # Если нет активной сцены, ничего не делаем
+
+        for obj in self.active_scene.objects:
+            if isinstance(obj, DrawableObject):  # Убеждаемся, что объект рисуемый
+                pen = QPen(self.pen_color, obj.pen.width())  # Используем новый цвет и прозрачность
+                obj.set_pen(pen)
+
+    def change_pen_opacity(self, value):
+        """Меняет прозрачность кисти и обновляет все фигуры"""
+        if self.scene:
+            self.scene.set_pen_opacity(value)
+            self.scene.update_scene_objects()  # 🔥 Обновляем все фигуры в sceen или sub_sceen
+
+
+

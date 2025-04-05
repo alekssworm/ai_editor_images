@@ -257,7 +257,7 @@
           </size>
          </property>
         </widget>
-        <widget class="QPushButton" name="pushButton_51">
+        <widget class="QPushButton" name="trash">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -269,7 +269,7 @@
          </property>
          <property name="icon">
           <iconset>
-           <normaloff>icons/pencil.svg</normaloff>icons/pencil.svg</iconset>
+           <normaloff>icons/trash.svg</normaloff>icons/trash.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -299,7 +299,7 @@
           <string>add obj</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="pushButton_52">
+        <widget class="QPushButton" name="render">
          <property name="text">
           <string>render</string>
          </property>
